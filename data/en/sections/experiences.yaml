@@ -1,9 +1,9 @@
 # section information
 section:
-  name: Experiences
+  name: Experience
   id: experiences
   enable: true
-  weight: 3
+  weight: 4
   showOnNavbar: true
   # Can optionally hide the title in sections
   # hideTitle: true
@@ -25,7 +25,7 @@ experiences:
           - Presented findings internally; co-authored a technical report on importance sampling for OED.
 
   - company:
-      name: University of Arizona
+      name: The University of Arizona
       url: "https://www.arizona.edu/"
       location: Tucson, AZ
       logo: /images/sections/experiences/uaz.png
@@ -42,7 +42,7 @@ experiences:
       name: Brigham Young University
       url: "https://www.byu.edu/"
       location: Provo, UT
-      logo: /images/sections/experiences/byu.jpg
+      logo: /images/sections/experiences/byu.png
       overview: BYU is a major research university with a strong applied mathematics program focused on computation and modeling.
     positions:
       - designation: Research Assistant
@@ -54,7 +54,7 @@ experiences:
           - Co-authored a peer-reviewed paper in *Statistics and Public Policy*.
 
       - designation: Mathematics Instructor & TA
-        start: Jan 2020
+        start: Jan 2021
         end: Apr 2023
         responsibilities:
           - Instructor of record for Math 102-Quantitative Reasoning; designed and taught all lectures, homework, and exams.

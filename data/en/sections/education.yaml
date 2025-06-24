@@ -4,18 +4,18 @@ section:
   id: education
   template: sections/education.html # Use "sections/education-alt.html for alternate template.
   enable: true
-  weight: 4
+  weight: 3
   showOnNavbar: true
   # Can optionally hide the title in sections
   # hideTitle: true
 
 degrees:
   - name: Ph.D in Applied Mathematics
-    icon: fa-microscope
+    icon: fa-graduation-cap
     timeframe: 2023-Present
     institution:
       name: The University of Arizona
-      url: "#"
+      url: "https://appliedmath.arizona.edu/"
       logo: /images/sections/experiences/uaz.png
       # Can optionally show a different logo for dark theme
       # darkLogo: /images/sections/education/tech_college.png
@@ -32,26 +32,9 @@ degrees:
     institution:
       name: Brigham Young University
       url: "#"
-      logo: /images/sections/experiences/byu.jpg
+      logo: /images/sections/experiences/byu.png
       # Can optionally show a different logo for dark theme
       # darkLogo: /images/sections/education/university.jpg
-    # takenCourses: #(optional)
-    #   # if true, the courses will be rendered as a table otherwise it will render as a list and the grades will be hidden.
-    #   showGrades: false
-    #   collapseAfter: 3
-    #   courses:
-    #     - name: Data Structures and Algorithm
-    #       achieved: 3.75
-    #       outOf: 4
-    #     - name: Network Security
-    #       achieved: 3.80
-    #       outOf: 4
-    #     - name: Operating System
-    #       achieved: 3.5
-    #       outOf: 4
-    #     - name: Artificial Intelligent
-    #       achieved: 3.75
-    #       outOf: 4
     # publications: #(optional)
     #   - title: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
     #     url: "#"
@@ -67,25 +50,34 @@ degrees:
         content: Hamiltonian Monte Carlo for Reconstructing Historical Earthquake-Induced Tsunamis
       - name: Advisor
         content: Jared Whitehead
-  - name: Higher Secondary School Certificate
-    icon: fa-university
-    timeframe: 2010-2012
+
+  - name: "B.Sc. in Mathematics: Applied and Computational Emphasis"
+    icon: fa-graduation-cap
+    timeframe: 2016-2020
     institution:
-      name: MST College of Science
+      name: Brigham Young University
       url: "#"
-      logo: /images/sections/education/science_college.png
-      # Can optionally show a different logo for dark theme
-      # darkLogo: /images/sections/education/science_college.png
-    grade: #(optional)
-      scale: GPA
-      achieved: 5
-      outOf: 5
-  - name: Secondary School Certificate
-    icon: fa-school
-    timeframe: 2005-2010
-    institution:
-      name: JK School of Science
-    grade: #(optional)
-      scale: GPA
-      achieved: 4.5
-      outOf: 5
+      logo: /images/sections/experiences/byu.png
+    takenCourses:
+      showGrades: false
+      collapseAfter: 3
+      courses:
+        - name: Deep Learning
+        - name: Natural Language Processing
+        - name: Computer Vision
+        - name: Optimal Control Theory
+        - name: Probability Theory
+        - name: Graph Theory
+        - name: Theory of Predictive Modeling
+        - name: Probabilistic Graphical Modeling
+        - name: Linear Algebra
+        - name: Numerical Methods
+  # - name: Secondary School Certificate
+  #   icon: fa-school
+  #   timeframe: 2005-2010
+  #   institution:
+  #     name: JK School of Science
+  #   grade: #(optional)
+  #     scale: GPA
+  #     achieved: 4.5
+  #     outOf: 5

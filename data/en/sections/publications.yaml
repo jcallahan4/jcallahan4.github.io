@@ -3,80 +3,138 @@ section:
   name: Publications
   id: publications
   enable: true
-  weight: 6
+  weight: 2
   showOnNavbar: true
   # Can optionally hide the title in sections
   # hideTitle: true
 
 # filter buttons
 buttons:
-- name: All
-  filter: "all"
-- name: "Machine Learning"
-  filter: "machinelearning"
-- name: "Image Processing"
-  filter: "image-processing"
-- name: Security
-  filter: "security"
+  - name: All
+    filter: "all"
+  - name: "Bayesian OED"
+    filter: "oed"
+  - name: "Seismic Sensing"
+    filter: "seismic"
+  - name: "Markov chain Monte Carlo"
+    filter: "mcmc"
+  - name: "Estimators"
+    filter: "estimators"
+  - name: "Public Policy"
+    filter: "policy"
 
 # your publications
 publications:
-- title: An Example Paper on Machine Learning
-  publishedIn:
-    name: 2020 IEEE Region Symposium (TENSYMP)
-    date: 7 June 2020
-    url: https://example.com
-  authors:
-  - name: Dr. Madman
-    url: https://example.com
-  - name: Dr. Lessmad
-    url: https://example.com
-  - name: Dr. Moremad
-    url: https://example.com
-  - name: Dr. Goodman
-    url: https://example.com
-  paper:
-    summary: Voluptate in id id voluptate laboris. Minim mollit aliquip sit aliqua ut exercitation voluptate eiusmod consequat pariatur sunt enim veniam. Velit esse tempor laboris anim tempor officia. Magna non labore duis do esse sit do ipsum culpa. Officia consequat id non duis culpa dolor. Excepteur magna non nostrud cupidatat aute aliqua aliquip.
-    url: https://example.com
-  categories: ["machinelearning","image-processing"]
-  tags: ["Machine Learning", "Autonomous Driving", "Computer Vision"]
+  - title: Reverse-Annealed Sequential Monte Carlo for Efficient Bayesian Optimal Experiment Design
+    publishedIn:
+      name: In progress.
+      # date: 7 June 2020
+      # url: https://example.com
+    authors:
+      - name: Andrew Chin
+        # url: https://example.com
+      - name: Jake Callahan
+        # url: https://example.com
+      - name: Jason Pacheco
+        # url: https://example.com
+      - name: Tommie Catanach
+        # url: https://example.com
+    paper:
+      summary: |
+        Expected information gain (EIG) is a crucial quantity in Bayesian optimal experimental design (BOED), quantifying how useful an experiment is by the amount we expect the posterior to differ from the prior. 
+        However, evaluating the EIG can be computationally expensive since it generally requires estimating the posterior normalizing constant. 
+        In this work, we leverage two idiosyncrasies of BOED to improve efficiency of EIG estimation via sequential Monte Carlo (SMC). 
+        First, in BOED we simulate the data and thus know the true underlying parameters. 
+        Second, we ultimately care about the EIG, not the individual normalizing constants. 
+        Often we observe that the Monte Carlo variance of standard SMC estimators for the normalizing constant of a single dataset are significantly lower than the variance of the normalizing constants across datasets; the latter thus contributes the majority of the variance for EIG estimates. 
+        This suggests the potential to slightly increase variance while drastically decreasing computation time by reducing the SMC population size, which leads us to an EIG-specific SMC estimator that starts with a only a single sample from the posterior and tempers _backwards_ towards the prior. 
+        Using this single-sample estimator, which we call reverse-annealed SMC (RA-SMC), we show that it is possible to estimate EIG with orders of magnitude fewer likelihood evaluations in three models: a four-dimensional spring-mass, a six-dimensional Johnson-Cook model and a four-dimensional source-finding problem.
 
-- title: An Sample Paper on Image Processing
-  publishedIn:
-    name: 2020 IEEE Region Symposium (TENSYMP)
-    date: 7 June 2020
-    url: https://example.com
-  authors:
-  - name: Dr. Madman
-    url: https://example.com
-  - name: Dr. Lessmad
-    url: https://example.com
-  - name: Dr. Moremad
-    url: https://example.com
-  - name: Dr. Goodman
-    url: https://example.com
-  paper:
-    summary: Ullamco magna minim cupidatat Lorem ea ex aliqua fugiat et. Dolor quis cillum ea duis irure et commodo aliquip consectetur ullamco labore ut anim nisi. Commodo reprehenderit est consectetur tempor adipisicing occaecat exercitation amet do aliquip dolor do irure. Labore officia ut magna pariatur reprehenderit et ex sit sunt. Magna proident ullamco adipisicing sit.
-    url: https://example.com
-  categories: ["image-processing"]
-  tags: ["Image Processing", "Computer Vision"]
+      # url: https://example.com
+    categories: ["oed", "estimators", "mcmc"]
+    tags:
+      [
+        "Bayesian optimal experiment design",
+        "Expected information gain",
+        "mutual information",
+        "model evidence",
+        "sequential Monte Carlo",
+        "Markov chain Monte Carlo",
+        "Bayesian methods",
+      ]
 
-- title: An Example Paper on Security
-  publishedIn:
-    name: 2020 IEEE Region Symposium (TENSYMP)
-    date: 7 June 2020
-    url: https://example.com
-  authors:
-  - name: Dr. Madman
-    url: https://example.com
-  - name: Dr. Lessmad
-    url: https://example.com
-  - name: Dr. Moremad
-    url: https://example.com
-  - name: Dr. Goodman
-    url: https://example.com
-  paper:
-    summary: Dolor ad cupidatat pariatur nulla ipsum ex ullamco nisi anim ullamco. Dolore elit esse in exercitation minim aliqua. Amet velit incididunt magna laboris. Proident reprehenderit deserunt ad officia duis dolor. Tempor nostrud ullamco ullamco sint deserunt cupidatat irure minim consectetur nulla adipisicing sunt.
-    url: https://example.com
-  categories: ["security"]
-  tags: ["Machine Learning", "Autonomous Driving", "Machine Vision"]
+  - title: Analysis and optimization of seismic monitoring networks with Bayesian optimal experimental design
+    publishedIn:
+      name: Geophysical Journal International
+      date: 17 January 2025
+      url: https://academic.oup.com/gji
+    authors:
+      - name: Jake Callahan
+      - name: Kevin Monogue
+      - name: Ruben Villareal
+      - name: Tommie Catanach
+    paper:
+      summary: |
+        Monitoring networks increasingly aim to assimilate data from a large number of diverse sensors covering many sensing modalities. 
+        Bayesian optimal experimental design (OED) seeks to identify data, sensor configurations or experiments which can optimally reduce uncertainty and hence increase the performance of a monitoring network. 
+        Information theory guides OED by formulating the choice of experiment or sensor placement as an optimization problem that maximizes the expected information gain (EIG) about quantities of interest given prior knowledge and models of expected observation data. 
+        Therefore, within the context of seismo-acoustic monitoring, we can use Bayesian OED to configure sensor networks by choosing sensor locations, types and fidelity in order to improve our ability to identify and locate seismic sources. 
+        In this work, we develop the framework necessary to use Bayesian OED to optimize a sensor network’s ability to locate seismic events from arrival time data of detected seismic phases at the regional-scale.
+      url: https://academic.oup.com/gji/article/240/3/1802/7959837
+    categories: ["oed", "seismic"]
+    tags: ["Bayesian OED", "Seismic Sensing", "Bayesian inference"]
+
+  - title: Mathematical analysis of redistricting in Utah
+    publishedIn:
+      name: Statistics and Public Policy
+      date: 27 September 2022
+      url: https://www.tandfonline.com/journals/uspp20
+    authors:
+      - name: Annika King
+        # url: https://example.com
+      - name: Jacob Murri
+        # url: https://example.com
+      - name: Jake Callahan
+        # url: https://example.com
+      - name: Adrienne Russell
+        # url: https://example.com
+      - name: Tyler J. Jarvis
+    paper:
+      summary: |
+        We discuss difficulties of evaluating partisan gerrymandering in the congressional districts in Utah and the failure of many common metrics in Utah. 
+        We explain why the Republican vote share in the least-Republican district (LRVS) is a good indicator of the advantage or disadvantage each party has in the Utah congressional districts. 
+        Although the LRVS only makes sense in settings with at most one competitive district, in that setting it directly captures the extent to which a given redistricting plan gives advantage or disadvantage to the Republican and Democratic parties. 
+        We use the LRVS to evaluate the most common measures of partisan gerrymandering in the context of Utah’s 2011 congressional districts. 
+        We do this by generating large ensembles of alternative redistricting plans using Markov chain Monte Carlo methods. 
+        We also discuss the implications of this new metric and our results on the question of whether the 2011 Utah congressional plan was gerrymandered.
+
+      url: https://www.tandfonline.com/doi/full/10.1080/2330443X.2022.2105770#abstract
+    categories: ["mcmc", "policy"]
+    tags:
+      [
+        "Ensemble methods",
+        "Gerrymandering",
+        "Markov chain Monte Carlo",
+        "Partisan symmetry",
+        "Redistricting",
+        "Utah",
+      ]
+  # - title: An Example Paper on Security
+  #   publishedIn:
+  #     name: 2020 IEEE Region Symposium (TENSYMP)
+  #     date: 7 June 2020
+  #     url: https://example.com
+  #   authors:
+  #     - name: Dr. Madman
+  #       url: https://example.com
+  #     - name: Dr. Lessmad
+  #       url: https://example.com
+  #     - name: Dr. Moremad
+  #       url: https://example.com
+  #     - name: Dr. Goodman
+  #       url: https://example.com
+  #   paper:
+  #     summary: Dolor ad cupidatat pariatur nulla ipsum ex ullamco nisi anim ullamco. Dolore elit esse in exercitation minim aliqua. Amet velit incididunt magna laboris. Proident reprehenderit deserunt ad officia duis dolor. Tempor nostrud ullamco ullamco sint deserunt cupidatat irure minim consectetur nulla adipisicing sunt.
+  #     url: https://example.com
+  #   categories: ["security"]
+  #   tags: ["Machine Learning", "Autonomous Driving", "Machine Vision"]
