@@ -20,7 +20,7 @@ languages:
   en:
     languageCode: en
     languageName: English
-    title: "Jake's Website"
+    title: "Jake Callahan"
     weight: 1
 # default language for the content
 defaultContentLanguage: en
