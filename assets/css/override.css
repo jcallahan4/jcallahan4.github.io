@@ -1,0 +1,8 @@
+.publications-section .authors a {
+  color: #0091b2 !important;
+  text-decoration: none !important;
+}
+
+.publications-section .authors a * {
+  color: inherit !important;
+}
