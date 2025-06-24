@@ -48,6 +48,8 @@ enableEmoji: true
 
 # Site parameters
 params:
+  customCSS:
+    - css/override.css
   # Background image of the landing page
   background: /images/site/cactus_mountain.jpeg
   # Background image of the landing page for dark theme
