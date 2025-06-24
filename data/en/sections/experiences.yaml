@@ -6,68 +6,85 @@ section:
   weight: 3
   showOnNavbar: true
   # Can optionally hide the title in sections
-  # hideTitle: true 
+  # hideTitle: true
 
 # Your experiences
 experiences:
-- company:
-    name: Example Co.
-    url: "https://www.example.com"
-    location: Dhaka Branch
-    logo: /images/sections/experiences/company1.jpg
-    # Can optionally show a different logo for dark theme
-    # darkLogo: /images/sections/experiences/company1.jpg
-    # company overview
-    overview: Example Co. is a widely recognized company for cloud-native development. It builds tools for Kubernetes.
-  positions:
-  - designation: Senior Software Engineer
-    start: Nov 2019
-    # don't provide end date if you are currently working there. It will be replaced by "Present"
-    # end: Dec 2020
-    # give some points about what was your responsibilities at the company.
-    responsibilities:
-    - Design and develop XYZ tool for ABC task
-    - Design, develop and manage disaster recovery tool [Xtool](https://www.example.com) that backup Kubernetes volumes, databases, and cluster's resource definition.
-    - Lead backend team.
+  - company:
+      name: Sandia National Laboratories
+      url: "https://www.sandia.gov/"
+      location: Livermore, CA
+      logo: /images/sections/experiences/sandia.png
+      overview: Sandia is a U.S. national lab conducting science-based technology development to support national security.
+    positions:
+      - designation: Research & Design Intern
+        start: May 2021
+        responsibilities:
+          - Developed Bayesian Optimal Experimental Design algorithms for seismic sensor placement.
+          - Modeled detection accuracy using HPC resources and large-scale geophysical datasets.
+          - Presented findings internally; co-authored a technical report on importance sampling for OED.
 
-  - designation: Junior Software Engineer
-    start: Nov 2017
-    end: Oct 2019
-    responsibilities:
-    - Implement and test xyz feature for abc tool.
-    - Support client for abc tool.
-    - Learn k,d,w technology for xyz.
+  - company:
+      name: University of Arizona
+      url: "https://www.arizona.edu/"
+      location: Tucson, AZ
+      logo: /images/sections/experiences/uaz.png
+      overview: The University of Arizona is a tier-1 research university known for strengths in applied math, geosciences, and computational modeling.
+    positions:
+      - designation: Instructor of Record — College Algebra (Math 112)
+        start: Aug 2023
+        responsibilities:
+          - Designed and delivered lectures, homework, and assessments for a large undergraduate College Algebra course.
+          - Taught and supported students in mathematical foundations, problem solving, and functional modeling.
+          - Received consistently strong feedback from students for clarity, support, and engagement.
 
-- company:
-    name: PreExample Co.
-    url: "https://www.example.com"
-    location: Nowhere
-    logo: /images/sections/experiences/company2.jpg
-    # Can optionally show a different logo for dark theme
-    # darkLogo: /images/sections/experiences/company2.jpg
-    overview: PreExample Co. is a gateway company to enter into Example co. So, nothing special here.
-  positions:
-  - designation: Software Engineer
-    start: March 2016
-    end: May 2017
-    responsibilities:
-    - Write lots of example codes.
-    - Read lots of examples.
-    - See lots of example videos.
+  - company:
+      name: Brigham Young University
+      url: "https://www.byu.edu/"
+      location: Provo, UT
+      logo: /images/sections/experiences/byu.jpg
+      overview: BYU is a major research university with a strong applied mathematics program focused on computation and modeling.
+    positions:
+      - designation: Research Assistant
+        start: Jun 2020
+        end: Apr 2023
+        responsibilities:
+          - Conducted MCMC-based research on tsunami reconstruction and political redistricting.
+          - Developed custom simulation tools and statistical models for historical geophysics and policy analysis.
+          - Co-authored a peer-reviewed paper in *Statistics and Public Policy*.
 
-- company:
-    name: Intern Counting Company (ICC).
-    url: "https://www.example.com"
-    location: Intern Land
-    logo: /images/sections/experiences/company3.jpg
-    # Can optionally show a different logo for dark theme
-    # darkLogo: /images/sections/experiences/company3.jpg
-    overview: Intern counting Company (ICC) is responsible for counting worldwide intern Engineers.
-  positions:
-  - designation: Intern
-    start: Jun 2015
-    end: Jan 2016
-    responsibilities:
-    - Count lost of interns.
-    - Count more interns.
-    - Count me as an intern.
+      - designation: Mathematics Instructor & TA
+        start: Jan 2020
+        end: Apr 2023
+        responsibilities:
+          - Instructor of record for Math 102-Quantitative Reasoning; designed and taught all lectures, homework, and exams.
+          - Led weekly recitation sessions for Calculus II and held office hours for Real Analysis II.
+          - Consistently earned glowing student reviews for effective instruction and support.
+
+  - company:
+      name: OrderBoard, Inc.
+      location: Orem, UT
+      logo: /images/sections/experiences/orderboard.png
+      overview: OrderBoard was a recruiting tech startup focused on optimizing job placement in difficult-to-source markets.
+    positions:
+      - designation: Data Scientist
+        start: May 2019
+        end: Jun 2021
+        responsibilities:
+          - Built NLP models to match candidates to job descriptions using free-text data.
+          - Contributed to a product pipeline that drove $2M in ARR.
+          - Designed systems for ingesting, cleaning, and modeling structured and unstructured data.
+
+  - company:
+      name: Honeywell
+      url: "https://www.honeywell.com/"
+      location: Charlotte, NC
+      logo: /images/sections/experiences/honeywell.png
+      overview: Honeywell is a global technology company working across aerospace, automation, and software sectors.
+    positions:
+      - designation: Automation & Cognitive Services Intern
+        start: Jun 2020
+        end: Aug 2020
+        responsibilities:
+          - Designed a scalable computer vision pipeline to analyze contract documents at terabyte scale.
+          - Built automated infrastructure for storage, transformation, and model deployment.
