@@ -20,18 +20,18 @@ degrees:
       # Can optionally show a different logo for dark theme
       # darkLogo: /images/sections/education/tech_college.png
     publications: #(optional)
-      - title: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        url: "#"
-      - title: Fusce eu augue ut odio porttitor pulvinar.
-        url: "#"
-      - title: Nullam vitae orci tincidunt purus viverra pulvinar.
-        url: "#"
+      - title: Reverse Adaptive Sequential Monte Carlo for Efficient Bayesian Optimal Experimental Design
+        # url: "#"
+      - title: Analysis and Optimization of Seismic Monitoring Networks with Bayesian Optimal Experimental Design
+        url: "https://academic.oup.com/gji/article/240/3/1802/7959837"
+      - title: Mathematical Analysis of Redistricting in Utah
+        url: "https://www.tandfonline.com/doi/full/10.1080/2330443X.2022.2105770#abstract"
   - name: M.Sc. in Mathematics
     icon: fa-graduation-cap
     timeframe: 2021-2023
     institution:
       name: Brigham Young University
-      url: "#"
+      url: "https://www.byu.edu"
       logo: /images/sections/experiences/byu.png
       # Can optionally show a different logo for dark theme
       # darkLogo: /images/sections/education/university.jpg
@@ -47,7 +47,8 @@ degrees:
     #   - Pellentesque ut fringilla magna.
     customSections: #(optional)
       - name: Thesis
-        content: Hamiltonian Monte Carlo for Reconstructing Historical Earthquake-Induced Tsunamis
+        content: |
+          [Hamiltonian Monte Carlo for Reconstructing Historical Earthquake-Induced Tsunamis](https://scholarsarchive.byu.edu/etd/9950/)
       - name: Advisor
         content: Jared Whitehead
 
