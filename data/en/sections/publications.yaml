@@ -32,13 +32,13 @@ publications:
       # url: https://example.com
     authors:
       - name: Andrew Chin
-        # url: https://example.com
+        url: https://scholar.google.com/citations?user=1NzogboAAAAJ&hl=en
       - name: Jake Callahan
-        # url: https://example.com
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
       - name: Jason Pacheco
-        # url: https://example.com
+        url: https://scholar.google.com/citations?user=71ZEsnEAAAAJ&hl=en
       - name: Tommie Catanach
-        # url: https://example.com
+        url: https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en
     paper:
       summary: |
         Expected information gain (EIG) is a crucial quantity in Bayesian optimal experimental design (BOED), quantifying how useful an experiment is by the amount we expect the posterior to differ from the prior. 
@@ -70,9 +70,13 @@ publications:
       url: https://academic.oup.com/gji
     authors:
       - name: Jake Callahan
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
       - name: Kevin Monogue
+        url: https://www.linkedin.com/in/kevin-monogue/
       - name: Ruben Villareal
+        url: https://www.linkedin.com/in/ruben-villarreal-3a3785a7/
       - name: Tommie Catanach
+        url: https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en
     paper:
       summary: |
         Monitoring networks increasingly aim to assimilate data from a large number of diverse sensors covering many sensing modalities. 
@@ -92,13 +96,16 @@ publications:
     authors:
       - name: Annika King
         # url: https://example.com
+        url: https://www.linkedin.com/in/annika-c-king/
       - name: Jacob Murri
         # url: https://example.com
+        url: https://www.jwmurri.com/
       - name: Jake Callahan
-        # url: https://example.com
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
       - name: Adrienne Russell
-        # url: https://example.com
+        url: \#
       - name: Tyler J. Jarvis
+        url: https://scholar.google.de/citations?user=jbGAxasAAAAJ&hl=ja
     paper:
       summary: |
         We discuss difficulties of evaluating partisan gerrymandering in the congressional districts in Utah and the failure of many common metrics in Utah. 
