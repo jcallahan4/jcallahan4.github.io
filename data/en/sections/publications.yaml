@@ -31,10 +31,10 @@ publications:
       # date: 7 June 2020
       # url: https://example.com
     authors:
-      - name: Andrew Chin
-        url: https://scholar.google.com/citations?user=1NzogboAAAAJ&hl=en
       - name: Jake Callahan
         url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
+      - name: Andrew Chin
+        url: https://scholar.google.com/citations?user=1NzogboAAAAJ&hl=en
       - name: Jason Pacheco
         url: https://scholar.google.com/citations?user=71ZEsnEAAAAJ&hl=en
       - name: Tommie Catanach
