@@ -20,7 +20,7 @@ customMenus:
     # if you set it to true, make sure you have set `footer.navigation.customMenus: true` in your config.yaml
     showOnFooter: false
   - name: Professional Resume
-    url: files/short_resume.pdf
+    url: files/prof_resume.pdf
     hideFromNavbar: true
     showOnFooter: false
 
