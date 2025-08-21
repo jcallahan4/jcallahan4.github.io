@@ -13,11 +13,15 @@ description: Portfolio of Jake Callahan.
 # they will be separated by a divider from the main menus.
 customMenus:
   - name: Vitae
-    url: files/resume.pdf
+    url: files/cv.pdf
     # specify whether to hide the menu item from top navbar or not.
     hideFromNavbar: false
     # specify whether to show the menu item in footer or not.
     # if you set it to true, make sure you have set `footer.navigation.customMenus: true` in your config.yaml
+    showOnFooter: false
+  - name: Professional Resume
+    url: files/resume.pdf
+    hideFromNavbar: true
     showOnFooter: false
 
 # Specify OpenGraph Headers

@@ -20,10 +20,9 @@ experiences:
       - designation: Research & Design Intern
         start: May 2021
         responsibilities:
-          - Developed Bayesian Optimal Experimental Design algorithms for seismic sensor placement.
-          - Modeled detection accuracy using HPC resources and large-scale geophysical datasets.
-          - Presented findings internally; co-authored a technical report on importance sampling for OED.
-
+          - Designed a new Monte Carlo algorithm that reduced the computational cost of Bayesian optimal experimental design tasks by up to 5x compared to standard methods. Research published as first author in NeurIPS 2025.
+          - Engineered a scalable ML framework in Python to enable previously infeasible optimization of national seismic monitoring networks, collaborating with geophysicists and engineers to advance capabilities for scientific and national security applications.
+          - Developed production-ready Bayesian models with neural network surrogates for anomaly detection and sensor placement, implementing GPU-accelerated uncertainty quantification that achieved a 10× speedup.
   - company:
       name: The University of Arizona
       url: "https://www.arizona.edu/"
@@ -71,9 +70,8 @@ experiences:
         start: May 2019
         end: Jun 2021
         responsibilities:
-          - Built NLP models to match candidates to job descriptions using free-text data.
-          - Contributed to a product pipeline that drove $2M in ARR.
-          - Designed systems for ingesting, cleaning, and modeling structured and unstructured data.
+          - Engineered and deployed a production NLP model using embedding techniques and cosine similarity matching that automated job-candidate pairing for thousands of requisitions, forming the core ML product that generated $1M+ in annual recurring revenue.
+          - Built and maintained data infrastructure for the company’s ML pipeline, including data cleaning, feature extraction, and performance validation.
 
   - company:
       name: Honeywell
