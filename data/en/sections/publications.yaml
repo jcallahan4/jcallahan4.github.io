@@ -192,7 +192,7 @@ publications:
         Pareto front analyses further reveal how robustness interacts with deployment cost, providing interpretable trade-offs for practice. 
         The methodology illustrates how generalized information measures, combined with differentiable surrogates, 
         extend BOED to inverse problems with structural error and logistical constraints.
-         # url: https://academic.oup.com/gji/article/240/3/1802/7959837
+    # url: https://academic.oup.com/gji/article/240/3/1802/7959837
     categories: ["oed", "seismic", "robust design"]
     tags: ["Bayesian OED", "Seismic Sensing", "Bayesian inference", "Robust Bayesian analysis", "Model misspecification"]
   # - title: An Example Paper on Security
