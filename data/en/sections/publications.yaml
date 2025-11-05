@@ -22,13 +22,15 @@ buttons:
     filter: "estimators"
   - name: "Public Policy"
     filter: "policy"
+  - name: "Robust design"
+    filter: "robust design"
 
 # your publications
 publications:
   - title: Reverse-Annealed Sequential Monte Carlo for Efficient Bayesian Optimal Experiment Design
     publishedIn:
-      name: Under review
-      # date: 7 June 2020
+      name: Neural Information Processing Systems
+      date: December 2025
       # url: https://example.com
     authors:
       - name: Jake Callahan
@@ -126,6 +128,73 @@ publications:
         "Redistricting",
         "Utah",
       ]
+
+  - title: On the Misinformation in a Statistical Experiment
+    publishedIn:
+      name: Under review.
+      # date: December 2025
+      # url: https://example.com
+    authors:
+      - name: Jake Callahan
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
+      - name: Tommie Catanach
+        url: https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en
+    paper:
+      summary: |
+        The principle that more informative experiments are always better is a cornerstone of Bayesian experimental design. 
+        This principle assumes the practitioner's model and inference are correct. 
+        In practice, both the data-generating model and the inferential approximation are inevitably misspecified, 
+        and we show that under these conditions the classical framework for comparing experiments breaks down. 
+        Designs ranked as most informative can become actively harmful, amplifying bias to produce confident but incorrect inferences. 
+        We demonstrate that the commonly-accepted axioms of experimental utility, such as Blackwell monotonicity, fail under misspecification, 
+        and that information measures proposed to handle it, like the Expected Generalized Information Gain (EGIG), do not obey these axioms. 
+        To resolve this, we propose a generalized axiomatic framework for robust Bayesian experimental design. 
+        We prove that EGIG satisfies our axioms as a criterion that penalizes inferential error, 
+        providing a principled foundation for its use in Bayesian experimental design. 
+        As a complementary approach, we derive a new measure that instead penalizes model error. 
+        Finally, we demonstrate our framework's utility across common modes of misspecification, 
+        showing it provides a reliable guide for experimental design where classical methods fail.
+    # url: https://example.com
+    categories: ["oed", "robust design"]
+    tags:
+      [
+       "Bayesian optimal experimental design", 
+       "Model misspecification", 
+       "Bayesian inference",
+       "Robust Bayesian analysis"
+      ]
+
+    - title: Analysis and optimization of seismic monitoring networks with Bayesian optimal experimental design
+    publishedIn:
+      name: Under review.
+      # date: 17 January 2025
+      # url: https://academic.oup.com/gji
+    authors:
+      - name: Jake Callahan
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
+      - name: Thomas Luckie
+        url: https://scholar.google.com/citations?user=nOUgoeEAAAAJ&hl=en
+      - name: Robert Porritt
+        url: https://scholar.google.com/citations?user=P0JzEJIAAAAJ&hl=en
+      - name: Tommie Catanach
+        url: https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en
+    paper:
+      summary: |
+        We study robust experimental design for optimizing seismic monitoring networks under model misspecification. 
+        Classical Bayesian optimal experimental design (BOED) maximizes expected information gain (EIG) but assumes an accurate forward model, 
+        which can lead to severe degradation when the model is misspecified. 
+        We introduce a criterion based on the Expected Generalized Information Gain (EGIG), 
+        which averages information gain over an ensemble of perturbed forward models to account for structural uncertainty. 
+        To compute EGIG at scale, we construct differentiable neural surrogates for seismic travel times 
+        and incorporate logistical constraints such as road access through differentiable cost functions.
+        This enables gradient-based Pareto optimization of sensor networks that balance robustness and deployment feasibility. 
+        Numerical experiments on perturbed velocity models show that EGIG-optimized networks maintain informativeness under severe misspecification. 
+        Pareto front analyses further reveal how robustness interacts with deployment cost, providing interpretable trade-offs for practice. 
+        The methodology illustrates how generalized information measures, combined with differentiable surrogates, 
+        extend BOED to inverse problems with structural error and logistical constraints.
+         # url: https://academic.oup.com/gji/article/240/3/1802/7959837
+    categories: ["oed", "seismic", "robust design"]
+    tags: ["Bayesian OED", "Seismic Sensing", "Bayesian inference", "Robust Bayesian analysis", "Model misspecification"]
   # - title: An Example Paper on Security
   #   publishedIn:
   #     name: 2020 IEEE Region Symposium (TENSYMP)
