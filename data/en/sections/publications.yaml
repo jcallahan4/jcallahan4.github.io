@@ -196,6 +196,26 @@ publications:
     # url: https://academic.oup.com/gji/article/240/3/1802/7959837
     categories: ["oed", "seismic", "robust design"]
     tags: ["Bayesian OED", "Seismic Sensing", "Bayesian inference", "Robust Bayesian analysis", "Model misspecification"]
+
+
+  - title: Distributional Reinforcement Learning for Risk-aware Bayesian Optimal Experimental Design
+    publishedIn:
+      name: In preparation.
+      # date: 17 January 2025
+      # url: https://academic.oup.com/gji
+    authors:
+      - name: Jake Callahan
+        url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
+    paper:
+      summary: Bayesian optimal experimental design typically maximizes expected information gain, which does not distinguish between outcome distributions that share the same mean. 
+               Designs with a high average can therefore still produce uninformative campaigns with substantial probability. 
+               Risk-aware formulations replace the expectation with a risk functional, but existing work is restricted to one-shot designs.
+               We introduce DistBOED, which learns the distribution of future information gain using distributional reinforcement learning. 
+               We formulate risk-aware sequential design in terms of return distributions and present a policy-gradient method that optimizes such objectives without nested Monte Carlo estimation. 
+               We show that DistBOED recovers existing one-shot risk-aware methods and learns risk-averse policies on nonlinear design problems.
+    # url: https://academic.oup.com/gji/article/240/3/1802/7959837
+    categories: ["oed", "seismic", "robust design"]
+    tags: ["Bayesian OED", "Bayesian inference", "Robust Bayesian analysis", "Risk-aware BOED"]
   # - title: An Example Paper on Security
   #   publishedIn:
   #     name: 2020 IEEE Region Symposium (TENSYMP)
