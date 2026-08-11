@@ -17,7 +17,7 @@
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/source-sensor.html"/>
     <RequestedWidth>960</RequestedWidth>
-    <RequestedHeight>400</RequestedHeight>
+    <RequestedHeight>308</RequestedHeight>
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 </OfficeApp>
