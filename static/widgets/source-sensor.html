@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Source / Sensor</title>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --line: #3a3e44;
+    --line-faint: #212429;
+    --text: #e8e6e1;
+    --text-dim: #8a8f96;
+    --accent: #ffb000;
+    --mono: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--mono);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .readout {
+    fill: var(--text);
+    font-size: 26px;
+    letter-spacing: 0.04em;
+  }
+  .readout-unit {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  #source-group { cursor: grab; }
+  #source-group.dragging { cursor: grabbing; }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 960 400" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: drag the source along the line; the sensor reads signal strength as one over distance squared.">
+
+  <!-- background grid ticks -->
+  <g id="grid"></g>
+
+  <!-- ground line -->
+  <line x1="60" y1="300" x2="900" y2="300" stroke="var(--line)" stroke-width="1"/>
+  <g id="axis-ticks"></g>
+
+  <!-- signal arcs + source (translated as a unit) -->
+  <g id="source-group">
+    <g id="arcs"></g>
+    <!-- hit target (invisible, generous) -->
+    <circle cx="0" cy="300" r="40" fill="transparent"/>
+    <!-- source marker -->
+    <circle id="source-ring" cx="0" cy="300" r="16" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+    <circle cx="0" cy="300" r="7" fill="var(--accent)"/>
+    <text class="label" x="0" y="330" text-anchor="middle">SOURCE</text>
+  </g>
+
+  <!-- sensor (fixed) -->
+  <g id="sensor-group">
+    <line id="sensor-mast" y2="300" stroke="var(--text)" stroke-width="1.5"/>
+    <path id="sensor-head" fill="var(--text)"/>
+    <text class="label" id="sensor-label" y="330" text-anchor="middle">SENSOR</text>
+
+    <!-- readout box with corner brackets -->
+    <g id="readout-box">
+      <rect id="readout-rect" fill="#111318" stroke="var(--line)" stroke-width="1"/>
+      <path id="brackets" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+      <text class="readout-unit" id="readout-title" text-anchor="middle">SIGNAL</text>
+      <text class="readout" id="readout-value" text-anchor="middle">0.000</text>
+    </g>
+  </g>
+</svg>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("scene");
+
+  // --- world geometry -------------------------------------------------
+  // The ground line spans PX0..PX1 pixels and U0..U1 world units.
+  var PX0 = 60, PX1 = 900, GROUND = 300;
+  var U0 = 0, U1 = 10;
+  var SENSOR_U = 7.5;                 // sensor position, world units
+  var pxPerUnit = (PX1 - PX0) / (U1 - U0);
+
+  function unitToPx(u) { return PX0 + (u - U0) * pxPerUnit; }
+  function pxToUnit(x) { return U0 + (x - PX0) / pxPerUnit; }
+
+  var sourceU = 2.5;                  // source position, world units
+
+  // --- axis ticks and faint vertical grid ------------------------------
+  var ticks = document.getElementById("axis-ticks");
+  var grid = document.getElementById("grid");
+  var ns = "http://www.w3.org/2000/svg";
+  for (var u = U0; u <= U1; u++) {
+    var x = unitToPx(u);
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1");
+    ticks.appendChild(t);
+
+    var g = document.createElementNS(ns, "line");
+    g.setAttribute("x1", x); g.setAttribute("x2", x);
+    g.setAttribute("y1", 40); g.setAttribute("y2", GROUND);
+    g.setAttribute("stroke", "var(--line-faint)");
+    g.setAttribute("stroke-width", "1");
+    grid.appendChild(g);
+  }
+
+  // --- sensor ----------------------------------------------------------
+  var sensorX = unitToPx(SENSOR_U);
+  var MAST_TOP = 130;
+  var mast = document.getElementById("sensor-mast");
+  mast.setAttribute("x1", sensorX); mast.setAttribute("x2", sensorX);
+  mast.setAttribute("y1", MAST_TOP);
+
+  // downward-pointing triangle at the top of the mast
+  var head = document.getElementById("sensor-head");
+  head.setAttribute("d",
+    "M " + (sensorX - 11) + " " + (MAST_TOP - 16) +
+    " L " + (sensorX + 11) + " " + (MAST_TOP - 16) +
+    " L " + sensorX + " " + MAST_TOP + " Z");
+
+  var sensorLabel = document.getElementById("sensor-label");
+  sensorLabel.setAttribute("x", sensorX);
+
+  // readout box above the sensor
+  var BOX_W = 150, BOX_H = 62;
+  var boxX = sensorX - BOX_W / 2, boxY = MAST_TOP - 26 - BOX_H;
+  var rect = document.getElementById("readout-rect");
+  rect.setAttribute("x", boxX); rect.setAttribute("y", boxY);
+  rect.setAttribute("width", BOX_W); rect.setAttribute("height", BOX_H);
+
+  // corner brackets (HUD style)
+  var B = 10;
+  var brackets = document.getElementById("brackets");
+  brackets.setAttribute("d",
+    "M " + boxX + " " + (boxY + B) + " V " + boxY + " H " + (boxX + B) +
+    " M " + (boxX + BOX_W - B) + " " + boxY + " H " + (boxX + BOX_W) + " V " + (boxY + B) +
+    " M " + (boxX + BOX_W) + " " + (boxY + BOX_H - B) + " V " + (boxY + BOX_H) + " H " + (boxX + BOX_W - B) +
+    " M " + (boxX + B) + " " + (boxY + BOX_H) + " H " + boxX + " V " + (boxY + BOX_H - B));
+
+  var title = document.getElementById("readout-title");
+  title.setAttribute("x", sensorX); title.setAttribute("y", boxY + 18);
+  var value = document.getElementById("readout-value");
+  value.setAttribute("x", sensorX); value.setAttribute("y", boxY + 47);
+
+  // --- signal arcs (wifi-style, animated emission) ----------------------
+  var arcsGroup = document.getElementById("arcs");
+  var N_ARCS = 4;
+  var R_MIN = 20, R_MAX = 190;
+  var arcs = [];
+  for (var i = 0; i < N_ARCS; i++) {
+    var a = document.createElementNS(ns, "path");
+    a.setAttribute("fill", "none");
+    a.setAttribute("stroke", "var(--accent)");
+    a.setAttribute("stroke-width", "1.5");
+    arcsGroup.appendChild(a);
+    arcs.push(a);
+  }
+
+  // upper semicircle centered on the source at ground level
+  function arcPath(r) {
+    return "M " + (-r) + " " + GROUND + " A " + r + " " + r + " 0 0 1 " + r + " " + GROUND;
+  }
+
+  var phase = 0;
+  function drawArcs(dt) {
+    phase = (phase + dt * 0.00018) % (1 / N_ARCS);
+    for (var i = 0; i < N_ARCS; i++) {
+      var f = phase + i / N_ARCS;          // 0..1 emission progress
+      var r = R_MIN + f * (R_MAX - R_MIN);
+      // fade in quickly, fade out toward the edge
+      var o = Math.min(1, f * 6) * (1 - f) * 0.85;
+      arcs[i].setAttribute("d", arcPath(r));
+      arcs[i].setAttribute("opacity", o.toFixed(3));
+    }
+  }
+
+  // --- readout ---------------------------------------------------------
+  function updateReadout() {
+    var d = Math.abs(sourceU - SENSOR_U);
+    var s = 1 / (d * d);
+    var txt;
+    if (!isFinite(s) || s > 999) txt = ">999";
+    else if (s >= 100) txt = s.toFixed(1);
+    else if (s >= 10) txt = s.toFixed(2);
+    else txt = s.toFixed(3);
+    value.textContent = txt;
+  }
+
+  // --- source position -------------------------------------------------
+  var sourceGroup = document.getElementById("source-group");
+  function placeSource() {
+    sourceGroup.setAttribute("transform", "translate(" + unitToPx(sourceU) + ",0)");
+    updateReadout();
+  }
+  placeSource();
+
+  // --- dragging ----------------------------------------------------------
+  var dragging = false;
+  var grabOffsetU = 0;
+
+  function eventUnit(evt) {
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return pxToUnit(p.x);
+  }
+
+  sourceGroup.addEventListener("pointerdown", function (evt) {
+    dragging = true;
+    grabOffsetU = eventUnit(evt) - sourceU;
+    sourceGroup.classList.add("dragging");
+    sourceGroup.setPointerCapture(evt.pointerId);
+    evt.preventDefault();
+  });
+
+  sourceGroup.addEventListener("pointermove", function (evt) {
+    if (!dragging) return;
+    var u = eventUnit(evt) - grabOffsetU;
+    sourceU = Math.max(U0, Math.min(U1, u));
+    placeSource();
+  });
+
+  function endDrag() {
+    dragging = false;
+    sourceGroup.classList.remove("dragging");
+  }
+  sourceGroup.addEventListener("pointerup", endDrag);
+  sourceGroup.addEventListener("pointercancel", endDrag);
+
+  // --- animation loop ----------------------------------------------------
+  var last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    drawArcs(ts - last);
+    last = ts;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
