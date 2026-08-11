@@ -7,7 +7,7 @@
   <ProviderName>Jake Callahan</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Sensor Placement Widget"/>
-  <Description DefaultValue="Interactive visualization: an unknown source sits somewhere on a line. Drag the sensor, take one noisy measurement, then reveal the source."/>
+  <Description DefaultValue="Visualization: an unknown source somewhere on a line, observed by a single fixed sensor."/>
   <IconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-64.png"/>
   <SupportUrl DefaultValue="https://www.jake-callahan.com"/>
@@ -17,7 +17,7 @@
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/sensor-placement.html"/>
     <RequestedWidth>960</RequestedWidth>
-    <RequestedHeight>400</RequestedHeight>
+    <RequestedHeight>252</RequestedHeight>
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 </OfficeApp>
