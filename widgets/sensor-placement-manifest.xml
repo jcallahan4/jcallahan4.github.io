@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="ContentApp">
+  <Id>086830e8-2d2e-4939-9f8c-379a740f8a8c</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Jake Callahan</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Sensor Placement Widget"/>
+  <Description DefaultValue="Interactive visualization: an unknown source sits somewhere on a line. Drag the sensor, take one noisy measurement, then reveal the source."/>
+  <IconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://www.jake-callahan.com"/>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/sensor-placement.html"/>
+    <RequestedWidth>960</RequestedWidth>
+    <RequestedHeight>400</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>ReadDocument</Permissions>
+</OfficeApp>
