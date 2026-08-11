@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measurement Utility</title>
+<!-- Office.js handshake so the page can run as a PowerPoint content add-in.
+     Harmless in a normal browser; the page does not depend on it. -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --line: #3a3e44;
+    --line-faint: #212429;
+    --text: #e8e6e1;
+    --text-dim: #8a8f96;
+    --accent: #ffb000;
+    --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .sublabel {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+  .readout-unit {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  .row-key {
+    fill: var(--accent);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .row-val {
+    fill: var(--text);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+  }
+  .src-key {
+    fill: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+  }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 960 252" preserveAspectRatio="xMidYMid meet" aria-label="Diagram: two candidate source positions A and B on a line. A sensor at the midpoint predicts identical signals under both; a sensor near A predicts very different signals, so its measurement distinguishes the hypotheses.">
+
+  <!-- faint vertical grid -->
+  <g id="grid"></g>
+
+  <!-- emission arcs, alternating between world A and world B -->
+  <g id="arc-holder"><g id="arcs"></g></g>
+
+  <!-- ground line -->
+  <line x1="40" y1="200" x2="920" y2="200" stroke="var(--line)" stroke-width="1"/>
+  <g id="axis-ticks"></g>
+
+  <!-- candidate sources -->
+  <g id="src-a">
+    <circle cx="0" cy="200" r="6" fill="var(--accent)"/>
+    <text class="src-key" y="230" text-anchor="middle">A</text>
+  </g>
+  <g id="src-b">
+    <circle cx="0" cy="200" r="6" fill="var(--accent)"/>
+    <text class="src-key" y="230" text-anchor="middle">B</text>
+  </g>
+
+  <!-- sensors are cloned from this template by script -->
+</svg>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("scene");
+  var ns = "http://www.w3.org/2000/svg";
+
+  // --- world geometry -------------------------------------------------
+  var PX0 = 40, PX1 = 920, GROUND = 200;
+  var U0 = 0, U1 = 10;
+  var pxPerUnit = (PX1 - PX0) / (U1 - U0);
+  function unitToPx(u) { return PX0 + (u - U0) * pxPerUnit; }
+
+  var SRC_A = 3, SRC_B = 7;
+  var SENSORS = [
+    { u: 5, name: "DESIGN 1", verdict: "A ≈ B" },   // midpoint: readings identical
+    { u: 2, name: "DESIGN 2", verdict: "A ≫ B" }    // near A: readings differ 25x
+  ];
+
+  // --- axis ticks and faint vertical grid ------------------------------
+  var ticks = document.getElementById("axis-ticks");
+  var grid = document.getElementById("grid");
+  for (var u = U0; u <= U1; u++) {
+    var x = unitToPx(u);
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1");
+    ticks.appendChild(t);
+
+    var g = document.createElementNS(ns, "line");
+    g.setAttribute("x1", x); g.setAttribute("x2", x);
+    g.setAttribute("y1", 8); g.setAttribute("y2", GROUND);
+    g.setAttribute("stroke", "var(--line-faint)");
+    g.setAttribute("stroke-width", "1");
+    grid.appendChild(g);
+  }
+
+  // --- candidate sources -------------------------------------------------
+  var srcA = document.getElementById("src-a");
+  var srcB = document.getElementById("src-b");
+  srcA.setAttribute("transform", "translate(" + unitToPx(SRC_A) + ",0)");
+  srcB.setAttribute("transform", "translate(" + unitToPx(SRC_B) + ",0)");
+
+  // --- sensors with two-row predicted-signal boxes --------------------------
+  function fmt(s) {
+    if (!isFinite(s) || s > 999) return ">999";
+    if (s >= 100) return s.toFixed(1);
+    if (s >= 10) return s.toFixed(2);
+    return s.toFixed(3);
+  }
+  function predicted(sensorU, srcU) {
+    var d = Math.abs(sensorU - srcU);
+    return 1 / (d * d);
+  }
+
+  var el = function (tag, attrs, cls, textContent) {
+    var e = document.createElementNS(ns, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (cls) e.setAttribute("class", cls);
+    if (textContent !== undefined) e.textContent = textContent;
+    return e;
+  };
+
+  var rowEls = { A: [], B: [] };  // text rows to highlight per world
+
+  SENSORS.forEach(function (s) {
+    var gx = unitToPx(s.u);
+    var g = el("g", { transform: "translate(" + gx + ",0)" });
+
+    // mast + head
+    g.appendChild(el("line", { x1: 0, y1: 118, x2: 0, y2: GROUND, stroke: "var(--text)", "stroke-width": 1.5 }));
+    g.appendChild(el("path", { d: "M -11 102 L 11 102 L 0 118 Z", fill: "var(--text)" }));
+
+    // box with corner brackets
+    var BW = 130, BH = 78, bx = -BW / 2, by = 8, B = 10;
+    g.appendChild(el("rect", { x: bx, y: by, width: BW, height: BH, fill: "#111318", stroke: "var(--line)", "stroke-width": 1 }));
+    g.appendChild(el("path", {
+      fill: "none", stroke: "var(--accent)", "stroke-width": 1.5,
+      d: "M " + bx + " " + (by + B) + " V " + by + " H " + (bx + B) +
+         " M " + (bx + BW - B) + " " + by + " H " + (bx + BW) + " V " + (by + B) +
+         " M " + (bx + BW) + " " + (by + BH - B) + " V " + (by + BH) + " H " + (bx + BW - B) +
+         " M " + (bx + B) + " " + (by + BH) + " H " + bx + " V " + (by + BH - B)
+    }));
+    g.appendChild(el("text", { x: 0, y: by + 16, "text-anchor": "middle" }, "readout-unit", "PREDICTED SIGNAL"));
+
+    // rows: reading under hypothesis A, reading under hypothesis B
+    [["A", SRC_A, 40], ["B", SRC_B, 64]].forEach(function (row) {
+      var key = row[0], srcU = row[1], ry = by + row[2];
+      var rowGroup = el("g", {});
+      rowGroup.appendChild(el("text", { x: bx + 16, y: ry }, "row-key", key));
+      rowGroup.appendChild(el("text", { x: bx + BW - 16, y: ry, "text-anchor": "end" }, "row-val", fmt(predicted(s.u, srcU))));
+      g.appendChild(rowGroup);
+      rowEls[key].push(rowGroup);
+    });
+
+    // labels below the line
+    g.appendChild(el("text", { y: 230, "text-anchor": "middle" }, "label", s.name));
+    g.appendChild(el("text", { y: 248, "text-anchor": "middle" }, "sublabel", s.verdict));
+
+    svg.appendChild(g);
+  });
+
+  // --- emission arcs, alternating world A / world B ---------------------------
+  var arcHolder = document.getElementById("arc-holder");
+  var arcsGroup = document.getElementById("arcs");
+  var N_ARCS = 4, R_MIN = 16, R_MAX = 120;
+  var arcs = [];
+  for (var i = 0; i < N_ARCS; i++) {
+    var a = el("path", { fill: "none", stroke: "var(--accent)", "stroke-width": 1.5 });
+    arcsGroup.appendChild(a);
+    arcs.push(a);
+  }
+  function arcPath(r) {
+    return "M " + (-r) + " " + GROUND + " A " + r + " " + r + " 0 0 1 " + r + " " + GROUND;
+  }
+
+  // --- animation: 3.5s in world A, 3.5s in world B, soft crossfade -------------
+  var HALF = 3500, RAMP = 500;
+  var phase = 0, last = null;
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    var dt = ts - last;
+    last = ts;
+
+    var cycle = ts % (2 * HALF);
+    var world = cycle < HALF ? "A" : "B";
+    var tIn = cycle < HALF ? cycle : cycle - HALF;
+    // envelope: fade in over RAMP, fade out over the last RAMP of the half-cycle
+    var env = Math.min(1, tIn / RAMP, (HALF - tIn) / RAMP);
+    env = Math.max(0, env);
+
+    arcHolder.setAttribute("transform",
+      "translate(" + unitToPx(world === "A" ? SRC_A : SRC_B) + ",0)");
+    arcHolder.setAttribute("opacity", env.toFixed(3));
+
+    phase = (phase + dt * 0.00018) % (1 / N_ARCS);
+    for (var j = 0; j < N_ARCS; j++) {
+      var f = phase + j / N_ARCS;
+      var r = R_MIN + f * (R_MAX - R_MIN);
+      var op = Math.min(1, f * 6) * (1 - f) * 0.85;
+      arcs[j].setAttribute("d", arcPath(r));
+      arcs[j].setAttribute("opacity", op.toFixed(3));
+    }
+
+    // source dots and readout rows follow the active world
+    srcA.setAttribute("opacity", world === "A" ? 1 : 0.35);
+    srcB.setAttribute("opacity", world === "B" ? 1 : 0.35);
+    rowEls.A.forEach(function (r) { r.setAttribute("opacity", world === "A" ? 1 : 0.4); });
+    rowEls.B.forEach(function (r) { r.setAttribute("opacity", world === "B" ? 1 : 0.4); });
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
