@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensor Placement</title>
+<!-- Office.js handshake so the page can run as a PowerPoint content add-in.
+     Harmless in a normal browser; the page does not depend on it. -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --line: #3a3e44;
+    --line-faint: #212429;
+    --text: #e8e6e1;
+    --text-dim: #8a8f96;
+    --accent: #ffb000;
+    --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--font);
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .readout {
+    fill: var(--text);
+    font-size: 26px;
+    letter-spacing: 0.04em;
+  }
+  .readout-unit {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  #sensor-group { cursor: grab; }
+  #sensor-group.dragging { cursor: grabbing; }
+
+  #controls {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+  }
+  #controls button {
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  #controls button:hover {
+    color: var(--text);
+    border-color: var(--text-dim);
+  }
+  #controls button.primary {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  #controls button.primary:hover {
+    color: var(--bg);
+    background: var(--accent);
+  }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 960 400" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: an unknown source sits somewhere on a line. Drag the sensor to a position and take one noisy measurement.">
+
+  <!-- background grid ticks -->
+  <g id="grid"></g>
+
+  <!-- ground line -->
+  <line x1="60" y1="300" x2="900" y2="300" stroke="var(--line)" stroke-width="1"/>
+  <g id="axis-ticks"></g>
+
+  <!-- ghost candidate sources (position unknown) -->
+  <g id="ghosts"></g>
+  <text class="label" x="60" y="352" id="unknown-label">SOURCE &#183; POSITION UNKNOWN</text>
+
+  <!-- true source (hidden until reveal) -->
+  <g id="true-source" visibility="hidden">
+    <g id="arcs"></g>
+    <circle id="true-dot" cx="0" cy="300" r="7" fill="var(--accent)"/>
+    <text class="label" id="true-label" y="352" text-anchor="middle" fill="var(--accent)">SOURCE</text>
+  </g>
+
+  <!-- sensor (draggable) -->
+  <g id="sensor-group">
+    <!-- generous invisible hit target -->
+    <rect x="-80" y="30" width="160" height="300" fill="transparent"/>
+    <line x1="0" y1="130" x2="0" y2="300" stroke="var(--text)" stroke-width="1.5"/>
+    <path d="M -11 114 L 11 114 L 0 130 Z" fill="var(--text)"/>
+    <text class="label" y="330" text-anchor="middle">SENSOR &#183; DRAG TO PLACE</text>
+
+    <!-- readout box with corner brackets -->
+    <rect x="-75" y="42" width="150" height="62" fill="#111318" stroke="var(--line)" stroke-width="1"/>
+    <path id="brackets" fill="none" stroke="var(--accent)" stroke-width="1.5"
+          d="M -75 52 V 42 H -65 M 65 42 H 75 V 52 M 75 94 V 104 H 65 M -65 104 H -75 V 94"/>
+    <text class="readout-unit" x="0" y="60" text-anchor="middle">SIGNAL</text>
+    <text class="readout" id="readout-value" x="0" y="89" text-anchor="middle">&#8212; &#8212; &#8212;</text>
+  </g>
+</svg>
+
+<div id="controls">
+  <button id="btn-measure" class="primary">Measure</button>
+  <button id="btn-reveal">Reveal</button>
+  <button id="btn-new">New source</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("scene");
+  var ns = "http://www.w3.org/2000/svg";
+
+  // --- world geometry -------------------------------------------------
+  var PX0 = 60, PX1 = 900, GROUND = 300;
+  var U0 = 0, U1 = 10;
+  var pxPerUnit = (PX1 - PX0) / (U1 - U0);
+
+  function unitToPx(u) { return PX0 + (u - U0) * pxPerUnit; }
+  function pxToUnit(x) { return U0 + (x - PX0) / pxPerUnit; }
+
+  // --- axis ticks and faint vertical grid ------------------------------
+  var ticks = document.getElementById("axis-ticks");
+  var grid = document.getElementById("grid");
+  for (var u = U0; u <= U1; u++) {
+    var x = unitToPx(u);
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1");
+    ticks.appendChild(t);
+
+    var g = document.createElementNS(ns, "line");
+    g.setAttribute("x1", x); g.setAttribute("x2", x);
+    g.setAttribute("y1", 40); g.setAttribute("y2", GROUND);
+    g.setAttribute("stroke", "var(--line-faint)");
+    g.setAttribute("stroke-width", "1");
+    grid.appendChild(g);
+  }
+
+  // --- ghost candidate sources -----------------------------------------
+  var GHOST_U = [0.7, 1.8, 2.7, 3.9, 4.8, 6.1, 7.2, 8.3, 9.3];
+  var ghostsGroup = document.getElementById("ghosts");
+  var ghosts = [];
+  GHOST_U.forEach(function (gu, i) {
+    var c = document.createElementNS(ns, "circle");
+    c.setAttribute("cx", unitToPx(gu));
+    c.setAttribute("cy", GROUND);
+    c.setAttribute("r", 5);
+    c.setAttribute("fill", "var(--accent)");
+    ghostsGroup.appendChild(c);
+    ghosts.push({ el: c, phase: i * 1.7 });
+  });
+
+  // --- state -------------------------------------------------------------
+  var trueU = null;        // hidden true source position
+  var sensorU = 5.0;
+  var measured = false;    // has the one-shot measurement been taken
+  var revealed = false;
+
+  function randomSource() {
+    trueU = 0.5 + Math.random() * 9.0;
+  }
+  randomSource();
+
+  // --- true source / arcs -------------------------------------------------
+  var trueGroup = document.getElementById("true-source");
+  var trueDot = document.getElementById("true-dot");
+  var trueLabel = document.getElementById("true-label");
+  var arcsGroup = document.getElementById("arcs");
+  var N_ARCS = 4, R_MIN = 20, R_MAX = 190;
+  var arcs = [];
+  for (var i = 0; i < N_ARCS; i++) {
+    var a = document.createElementNS(ns, "path");
+    a.setAttribute("fill", "none");
+    a.setAttribute("stroke", "var(--accent)");
+    a.setAttribute("stroke-width", "1.5");
+    arcsGroup.appendChild(a);
+    arcs.push(a);
+  }
+
+  function placeTrueSource() {
+    var x = unitToPx(trueU);
+    trueDot.setAttribute("cx", x);
+    trueLabel.setAttribute("x", x);
+    arcsGroup.setAttribute("transform", "translate(" + x + ",0)");
+  }
+
+  function arcPath(r) {
+    return "M " + (-r) + " " + GROUND + " A " + r + " " + r + " 0 0 1 " + r + " " + GROUND;
+  }
+
+  // --- readout -------------------------------------------------------------
+  var readout = document.getElementById("readout-value");
+  var NO_READING = "— — —";
+
+  function gauss() {
+    var u1 = Math.random() || 1e-9, u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function takeMeasurement() {
+    var d = Math.abs(sensorU - trueU);
+    var s = 1 / (d * d);
+    var noisy = s * (1 + 0.12 * gauss());
+    noisy = Math.max(0, noisy);
+    var txt;
+    if (!isFinite(noisy) || noisy > 999) txt = ">999";
+    else if (noisy >= 100) txt = noisy.toFixed(1);
+    else if (noisy >= 10) txt = noisy.toFixed(2);
+    else txt = noisy.toFixed(3);
+    readout.textContent = txt;
+    measured = true;
+  }
+
+  function clearMeasurement() {
+    readout.textContent = NO_READING;
+    measured = false;
+  }
+
+  // --- sensor drag -----------------------------------------------------------
+  var sensorGroup = document.getElementById("sensor-group");
+  function placeSensor() {
+    sensorGroup.setAttribute("transform", "translate(" + unitToPx(sensorU) + ",0)");
+  }
+  placeSensor();
+
+  var dragging = false;
+  var grabOffsetU = 0;
+
+  function eventUnit(evt) {
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    var p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return pxToUnit(p.x);
+  }
+
+  sensorGroup.addEventListener("pointerdown", function (evt) {
+    dragging = true;
+    grabOffsetU = eventUnit(evt) - sensorU;
+    sensorGroup.classList.add("dragging");
+    sensorGroup.setPointerCapture(evt.pointerId);
+    evt.preventDefault();
+  });
+
+  sensorGroup.addEventListener("pointermove", function (evt) {
+    if (!dragging) return;
+    var u = eventUnit(evt) - grabOffsetU;
+    var next = Math.max(U0, Math.min(U1, u));
+    if (next !== sensorU && measured) clearMeasurement(); // moved: one shot resets
+    sensorU = next;
+    placeSensor();
+  });
+
+  function endDrag() {
+    dragging = false;
+    sensorGroup.classList.remove("dragging");
+  }
+  sensorGroup.addEventListener("pointerup", endDrag);
+  sensorGroup.addEventListener("pointercancel", endDrag);
+
+  // --- controls ---------------------------------------------------------------
+  var unknownLabel = document.getElementById("unknown-label");
+
+  document.getElementById("btn-measure").addEventListener("click", takeMeasurement);
+
+  document.getElementById("btn-reveal").addEventListener("click", function () {
+    revealed = true;
+    trueGroup.setAttribute("visibility", "visible");
+    ghostsGroup.setAttribute("visibility", "hidden");
+    unknownLabel.setAttribute("visibility", "hidden");
+    placeTrueSource();
+  });
+
+  document.getElementById("btn-new").addEventListener("click", function () {
+    randomSource();
+    revealed = false;
+    trueGroup.setAttribute("visibility", "hidden");
+    ghostsGroup.setAttribute("visibility", "visible");
+    unknownLabel.setAttribute("visibility", "visible");
+    clearMeasurement();
+  });
+
+  // --- animation loop -----------------------------------------------------------
+  var phase = 0, last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    var dt = ts - last;
+    last = ts;
+
+    // ghost pulsing
+    for (var i = 0; i < ghosts.length; i++) {
+      var o = 0.12 + 0.16 * (0.5 + 0.5 * Math.sin(ts * 0.0012 + ghosts[i].phase));
+      ghosts[i].el.setAttribute("opacity", o.toFixed(3));
+    }
+
+    // emission arcs (only while revealed)
+    if (revealed) {
+      phase = (phase + dt * 0.00018) % (1 / N_ARCS);
+      for (var j = 0; j < N_ARCS; j++) {
+        var f = phase + j / N_ARCS;
+        var r = R_MIN + f * (R_MAX - R_MIN);
+        var op = Math.min(1, f * 6) * (1 - f) * 0.85;
+        arcs[j].setAttribute("d", arcPath(r));
+        arcs[j].setAttribute("opacity", op.toFixed(3));
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
