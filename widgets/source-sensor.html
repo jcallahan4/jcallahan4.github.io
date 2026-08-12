@@ -10,13 +10,13 @@
 <script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
 <style>
   :root {
-    --bg: #0b0c0e;
-    --line: #3a3e44;
-    --line-faint: #212429;
-    --text: #e8e6e1;
-    --text-dim: #8a8f96;
-    --accent: #ffb000;
-    --signal: #3ddc84;
+    --bg: #ffffff;
+    --line: #c9ccd0;
+    --line-faint: #edeef0;
+    --text: #1a1d20;
+    --text-dim: #6e7378;
+    --accent: #dd8500;
+    --signal: #18a05c;
     --mono: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   html, body {
@@ -83,7 +83,7 @@
 
     <!-- readout box with corner brackets -->
     <g id="readout-box">
-      <rect id="readout-rect" fill="#111318" stroke="var(--line)" stroke-width="1"/>
+      <rect id="readout-rect" fill="#f6f6f4" stroke="var(--line)" stroke-width="1"/>
       <path id="brackets" fill="none" stroke="var(--signal)" stroke-width="1.5"/>
       <text class="readout-unit" id="readout-title" text-anchor="middle">SIGNAL</text>
       <text class="readout" id="readout-value" text-anchor="middle">0.000</text>

@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantifying Belief</title>
+<!-- Office.js handshake so the page can run as a PowerPoint content add-in.
+     Harmless in a normal browser; the page does not depend on it. -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --line: #c9ccd0;
+    --line-faint: #edeef0;
+    --text: #1a1d20;
+    --text-dim: #6e7378;
+    --accent: #dd8500;
+    --signal: #18a05c;
+    --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--font);
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .tick-num {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .density-val {
+    fill: var(--accent);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .big-val {
+    fill: var(--accent);
+    font-size: 17px;
+    letter-spacing: 0.06em;
+  }
+  .btn { cursor: pointer; }
+  .btn rect { fill: transparent; stroke: var(--line); stroke-width: 1; }
+  .btn text {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .btn:hover rect { stroke: var(--text-dim); }
+  .btn:hover text { fill: var(--text); }
+  .btn.active rect { fill: var(--accent); stroke: var(--accent); }
+  .btn.active text { fill: var(--bg); }
+  .bar {
+    fill: var(--accent);
+    fill-opacity: 0.18;
+    stroke: var(--accent);
+    stroke-opacity: 0.7;
+    stroke-width: 1;
+  }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 880 400" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: a belief curve over source location. Ratio mode compares plausibility at two points, area mode shows probability over a region, sample mode draws plausible source locations that rebuild the curve as a histogram.">
+
+  <!-- mode buttons -->
+  <g id="mode-ratio" class="btn">
+    <rect x="20" y="14" width="76" height="28"/>
+    <text x="58" y="32" text-anchor="middle">RATIO</text>
+  </g>
+  <g id="mode-area" class="btn">
+    <rect x="104" y="14" width="70" height="28"/>
+    <text x="139" y="32" text-anchor="middle">AREA</text>
+  </g>
+  <g id="mode-sample" class="btn">
+    <rect x="182" y="14" width="84" height="28"/>
+    <text x="224" y="32" text-anchor="middle">SAMPLE</text>
+  </g>
+  <g id="btn-batch" class="btn">
+    <rect x="274" y="14" width="60" height="28"/>
+    <text x="304" y="32" text-anchor="middle">&#215;100</text>
+  </g>
+  <g id="btn-reset" class="btn">
+    <rect x="342" y="14" width="72" height="28"/>
+    <text x="378" y="32" text-anchor="middle">RESET</text>
+  </g>
+  <text class="label" id="count-label" x="436" y="32" visibility="hidden">N = 0</text>
+  <text class="label" id="theta-label" x="516" y="32" visibility="hidden">&#952; = &#8212;</text>
+
+  <text class="label" x="840" y="32" text-anchor="end">BELIEF &#183; p(&#952;)</text>
+
+  <!-- histogram bars (sample mode) -->
+  <g id="bars"></g>
+
+  <!-- area shading (area mode) -->
+  <path id="area-fill" fill="var(--accent)" fill-opacity="0.28" visibility="hidden"/>
+
+  <!-- belief curve -->
+  <path id="curve-fill" fill="var(--accent)" fill-opacity="0.10"/>
+  <path id="curve" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+
+  <!-- theta axis -->
+  <line x1="40" y1="310" x2="840" y2="310" stroke="var(--line)" stroke-width="1"/>
+  <g id="axis-ticks"></g>
+
+  <!-- ratio mode overlay -->
+  <g id="g-ratio" visibility="hidden">
+    <g id="cursor-a">
+      <line y2="310" stroke="var(--text)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+      <circle r="5" fill="var(--accent)"/>
+      <text class="density-val" y="-14" text-anchor="middle">0.000</text>
+    </g>
+    <g id="cursor-b">
+      <line y2="310" stroke="var(--text)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+      <circle r="5" fill="var(--accent)"/>
+      <text class="density-val" y="-14" text-anchor="middle">0.000</text>
+    </g>
+    <text class="big-val" id="ratio-label" y="84" text-anchor="middle">&#8212;</text>
+  </g>
+
+  <!-- area mode overlay -->
+  <g id="g-area" visibility="hidden">
+    <path id="handle-a" fill="var(--accent)" style="cursor: ew-resize"/>
+    <path id="handle-b" fill="var(--accent)" style="cursor: ew-resize"/>
+    <text class="big-val" id="area-label" y="84" text-anchor="middle">&#8212;</text>
+  </g>
+
+  <!-- falling sample dots -->
+  <g id="flying"></g>
+</svg>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("scene");
+  var ns = "http://www.w3.org/2000/svg";
+
+  // --- geometry -----------------------------------------------------------
+  var PX0 = 40, PX1 = 840, GROUND = 310;
+  var T0 = 0, T1 = 10;
+  var CURVE_H = 185;                 // pixel height of the density peak
+  function tToPx(t) { return PX0 + (t - T0) / (T1 - T0) * (PX1 - PX0); }
+  function pxToT(x) { return T0 + (x - PX0) / (PX1 - PX0) * (T1 - T0); }
+
+  // --- the belief density: mixture of two gaussians --------------------------
+  var COMP = [
+    { w: 0.6, mu: 3.6, s: 1.1 },
+    { w: 0.4, mu: 7.1, s: 0.75 }
+  ];
+  function pdf(t) {
+    var p = 0;
+    for (var i = 0; i < COMP.length; i++) {
+      var c = COMP[i], z = (t - c.mu) / c.s;
+      p += c.w * Math.exp(-0.5 * z * z) / (c.s * Math.sqrt(2 * Math.PI));
+    }
+    return p;
+  }
+
+  // dense grid for max, CDF, inverse-CDF sampling
+  var GN = 2000, gridP = [], gridC = [], maxP = 0;
+  (function () {
+    var sum = 0, dt = (T1 - T0) / GN;
+    for (var i = 0; i <= GN; i++) {
+      var p = pdf(T0 + i * dt);
+      gridP.push(p);
+      maxP = Math.max(maxP, p);
+      sum += p * dt;
+      gridC.push(sum);
+    }
+    for (var j = 0; j < gridC.length; j++) gridC[j] /= sum;  // normalize truncation
+  })();
+  function cdf(t) {
+    var i = Math.max(0, Math.min(GN, Math.round((t - T0) / (T1 - T0) * GN)));
+    return gridC[i];
+  }
+  function sampleTheta() {
+    var u = Math.random(), lo = 0, hi = GN;
+    while (hi - lo > 1) {
+      var mid = (lo + hi) >> 1;
+      if (gridC[mid] < u) lo = mid; else hi = mid;
+    }
+    return T0 + hi / GN * (T1 - T0);
+  }
+  function yCurve(t) { return GROUND - pdf(t) / maxP * CURVE_H; }
+
+  // --- draw the curve ---------------------------------------------------------
+  function curvePath(closed) {
+    var d = "M " + PX0 + " " + GROUND;
+    for (var i = 0; i <= 200; i++) {
+      var t = T0 + i / 200 * (T1 - T0);
+      d += " L " + tToPx(t).toFixed(1) + " " + yCurve(t).toFixed(1);
+    }
+    if (closed) d += " L " + PX1 + " " + GROUND + " Z";
+    return d;
+  }
+  document.getElementById("curve").setAttribute("d", curvePath(false));
+  document.getElementById("curve-fill").setAttribute("d", curvePath(true));
+
+  // --- axis ---------------------------------------------------------------------
+  var ticks = document.getElementById("axis-ticks");
+  for (var u = T0; u <= T1; u++) {
+    var x = tToPx(u);
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1");
+    ticks.appendChild(t);
+    if (u % 2 === 0) {
+      var n = document.createElementNS(ns, "text");
+      n.setAttribute("class", "tick-num");
+      n.setAttribute("x", x); n.setAttribute("y", GROUND + 24);
+      n.setAttribute("text-anchor", "middle");
+      n.textContent = "θ = " + u;
+      ticks.appendChild(n);
+    }
+  }
+
+  // --- mode switching --------------------------------------------------------------
+  var mode = null;   // null | 'ratio' | 'area' | 'sample'
+  var groups = {
+    ratio: document.getElementById("g-ratio"),
+    area: document.getElementById("g-area")
+  };
+  var modeBtns = {
+    ratio: document.getElementById("mode-ratio"),
+    area: document.getElementById("mode-area"),
+    sample: document.getElementById("mode-sample")
+  };
+  var countLabel = document.getElementById("count-label");
+  var thetaLabel = document.getElementById("theta-label");
+  var barsGroup = document.getElementById("bars");
+  var areaFill = document.getElementById("area-fill");
+
+  function setMode(m) {
+    mode = (mode === m) ? null : m;
+    for (var k in modeBtns) {
+      modeBtns[k].setAttribute("class", "btn" + (mode === k ? " active" : ""));
+    }
+    groups.ratio.setAttribute("visibility", mode === "ratio" ? "visible" : "hidden");
+    groups.area.setAttribute("visibility", mode === "area" ? "visible" : "hidden");
+    areaFill.setAttribute("visibility", mode === "area" ? "visible" : "hidden");
+    barsGroup.setAttribute("visibility", mode === "sample" ? "visible" : "hidden");
+    var sVis = mode === "sample" ? "visible" : "hidden";
+    countLabel.setAttribute("visibility", sVis);
+    thetaLabel.setAttribute("visibility", sVis);
+  }
+  modeBtns.ratio.addEventListener("click", function () { setMode("ratio"); });
+  modeBtns.area.addEventListener("click", function () { setMode("area"); });
+  // SAMPLE: first click enters sample mode, further clicks each draw a sample
+  modeBtns.sample.addEventListener("click", function () {
+    if (mode !== "sample") setMode("sample");
+    else sample();
+  });
+
+  // --- RATIO mode -------------------------------------------------------------------
+  var cur = { a: 3.6, b: 5.4 };
+  var cursorEls = {
+    a: document.getElementById("cursor-a"),
+    b: document.getElementById("cursor-b")
+  };
+  var ratioLabel = document.getElementById("ratio-label");
+
+  function renderRatio() {
+    ["a", "b"].forEach(function (k) {
+      var t = cur[k], x = tToPx(t), y = yCurve(t);
+      var g = cursorEls[k];
+      g.setAttribute("transform", "translate(" + x + "," + y + ")");
+      g.querySelector("line").setAttribute("y2", GROUND - y);
+      g.querySelector("text").textContent = pdf(t).toFixed(3);
+    });
+    var pa = pdf(cur.a), pb = pdf(cur.b);
+    var r = pa / pb;
+    var txt = r >= 1 ? r.toFixed(1) + " × MORE PLAUSIBLE"
+                     : (1 / r).toFixed(1) + " × LESS PLAUSIBLE";
+    ratioLabel.textContent = txt;
+    ratioLabel.setAttribute("x", (tToPx(cur.a) + tToPx(cur.b)) / 2);
+  }
+  renderRatio();
+
+  // --- AREA mode ----------------------------------------------------------------------
+  var bnd = { a: 2.0, b: 4.6 };
+  var handleEls = {
+    a: document.getElementById("handle-a"),
+    b: document.getElementById("handle-b")
+  };
+  var areaLabel = document.getElementById("area-label");
+
+  function renderArea() {
+    var xa = tToPx(bnd.a), xb = tToPx(bnd.b);
+    ["a", "b"].forEach(function (k) {
+      var x = tToPx(bnd[k]);
+      handleEls[k].setAttribute("d",
+        "M " + (x - 8) + " " + (GROUND + 16) + " L " + (x + 8) + " " + (GROUND + 16) +
+        " L " + x + " " + (GROUND + 2) + " Z");
+    });
+    var d = "M " + xa + " " + GROUND;
+    for (var i = 0; i <= 100; i++) {
+      var t = bnd.a + i / 100 * (bnd.b - bnd.a);
+      d += " L " + tToPx(t).toFixed(1) + " " + yCurve(t).toFixed(1);
+    }
+    d += " L " + xb + " " + GROUND + " Z";
+    areaFill.setAttribute("d", d);
+    var p = cdf(bnd.b) - cdf(bnd.a);
+    areaLabel.textContent = "P( " + bnd.a.toFixed(1) + " ≤ θ ≤ " + bnd.b.toFixed(1) + " ) = " + p.toFixed(2);
+    areaLabel.setAttribute("x", (xa + xb) / 2);
+  }
+  renderArea();
+
+  // --- dragging (ratio cursors, area handles) --------------------------------------------
+  var dragKey = null;
+  function eventT(evt) {
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    return pxToT(pt.matrixTransform(svg.getScreenCTM().inverse()).x);
+  }
+  svg.addEventListener("pointerdown", function (evt) {
+    if (mode !== "ratio" && mode !== "area") return;
+    var t = eventT(evt);
+    var o = mode === "ratio" ? cur : bnd;
+    dragKey = Math.abs(t - o.a) <= Math.abs(t - o.b) ? "a" : "b";
+    if (Math.abs(t - o[dragKey]) > 1.2) { dragKey = null; return; }
+    svg.setPointerCapture(evt.pointerId);
+    evt.preventDefault();
+  });
+  svg.addEventListener("pointermove", function (evt) {
+    if (!dragKey) return;
+    var t = Math.max(T0 + 0.15, Math.min(T1 - 0.15, eventT(evt)));
+    if (mode === "ratio") {
+      cur[dragKey] = t;
+      renderRatio();
+    } else if (mode === "area") {
+      if (dragKey === "a") bnd.a = Math.min(t, bnd.b - 0.2);
+      else bnd.b = Math.max(t, bnd.a + 0.2);
+      renderArea();
+    }
+  });
+  function endDrag() { dragKey = null; }
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // --- SAMPLE mode -------------------------------------------------------------------------
+  var BINW = 0.25;
+  var BIN_PX = BINW / (T1 - T0) * (PX1 - PX0);
+  var counts = {}, barEl = {}, barH = {}, barT = {}, N = 0;
+  var flyingGroup = document.getElementById("flying");
+  var flights = [], fades = [];
+
+  function ensureBar(bin) {
+    if (barEl[bin]) return;
+    var x0 = tToPx(bin * BINW);
+    var r = document.createElementNS(ns, "rect");
+    r.setAttribute("class", "bar");
+    r.setAttribute("x", x0 + 0.5);
+    r.setAttribute("width", BIN_PX - 1);
+    r.setAttribute("y", GROUND);
+    r.setAttribute("height", 0);
+    barsGroup.appendChild(r);
+    barEl[bin] = r; barH[bin] = 0; barT[bin] = 0;
+  }
+
+  // bars are density-normalized, so the histogram converges to the curve
+  function retarget() {
+    for (var k in counts) {
+      ensureBar(k);
+      var dens = counts[k] / (N * BINW);
+      barT[k] = Math.min(CURVE_H * 1.35, dens / maxP * CURVE_H);
+    }
+  }
+
+  function sample() {
+    if (mode !== "sample") setMode("sample");
+    var th = sampleTheta();
+    thetaLabel.textContent = "θ = " + th.toFixed(2);
+
+    var dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("r", 4.5);
+    dot.setAttribute("fill", "var(--accent)");
+    flyingGroup.appendChild(dot);
+    flights.push({
+      el: dot, t: 0, dur: 500,
+      x: tToPx(th), y0: yCurve(th) - 8, y1: GROUND - 4.5,
+      bin: Math.floor(th / BINW)
+    });
+  }
+
+  function land(f) {
+    counts[f.bin] = (counts[f.bin] || 0) + 1;
+    N++;
+    retarget();
+    countLabel.textContent = "N = " + N;
+    fades.push({ el: f.el, t: 0, dur: 400 });
+  }
+
+  document.getElementById("btn-batch").addEventListener("click", function () {
+    if (mode !== "sample") setMode("sample");
+    for (var k = 0; k < 100; k++) setTimeout(sample, k * 16);
+  });
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    flights.forEach(function (f) { f.el.remove(); });
+    fades.forEach(function (f) { f.el.remove(); });
+    flights = []; fades = [];
+    while (barsGroup.firstChild) barsGroup.firstChild.remove();
+    counts = {}; barEl = {}; barH = {}; barT = {}; N = 0;
+    countLabel.textContent = "N = 0";
+    thetaLabel.textContent = "θ = —";
+  });
+  // --- animation loop -------------------------------------------------------------------------
+  function easeIn(t) { return t * t; }
+  var last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    var dt = ts - last;
+    last = ts;
+
+    for (var i = flights.length - 1; i >= 0; i--) {
+      var f = flights[i];
+      f.t += dt;
+      var p = Math.min(1, f.t / f.dur);
+      f.el.setAttribute("cx", f.x);
+      f.el.setAttribute("cy", f.y0 + (f.y1 - f.y0) * easeIn(p));
+      if (p >= 1) { land(f); flights.splice(i, 1); }
+    }
+    for (var j = fades.length - 1; j >= 0; j--) {
+      var fd = fades[j];
+      fd.t += dt;
+      var q = Math.min(1, fd.t / fd.dur);
+      fd.el.setAttribute("opacity", (1 - q).toFixed(3));
+      if (q >= 1) { fd.el.remove(); fades.splice(j, 1); }
+    }
+    var k = 1 - Math.exp(-dt / 120);
+    for (var bin in barT) {
+      var c = barH[bin], tg = barT[bin];
+      if (c === tg) continue;
+      c += (tg - c) * k;
+      if (Math.abs(tg - c) < 0.15) c = tg;
+      barH[bin] = c;
+      barEl[bin].setAttribute("y", GROUND - c);
+      barEl[bin].setAttribute("height", c);
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // hash hooks: pre-select a mode, or auto-sample a batch with #demo
+  if (location.hash === "#ratio") setMode("ratio");
+  if (location.hash === "#area") setMode("area");
+  if (location.hash === "#demo") {
+    setMode("sample");
+    for (var k = 0; k < 100; k++) setTimeout(sample, k * 16);
+  }
+})();
+</script>
+</body>
+</html>
