@@ -100,14 +100,14 @@
 
   // --- world geometry -------------------------------------------------
   var PX0 = 40, PX1 = 920, GROUND = 200;
-  var U0 = 0, U1 = 10;
+  var U0 = 0, U1 = 8.8;
   var pxPerUnit = (PX1 - PX0) / (U1 - U0);
   function unitToPx(u) { return PX0 + (u - U0) * pxPerUnit; }
 
-  var SRC_A = 3, SRC_B = 7;
+  var SRC_A = 2, SRC_B = 8;
   var SENSORS = [
     { u: 5, name: "DESIGN 1", verdict: "A ≈ B" },   // midpoint: readings identical
-    { u: 2, name: "DESIGN 2", verdict: "A ≫ B" }    // near A: readings differ 25x
+    { u: 1, name: "DESIGN 2", verdict: "A ≫ B" }    // near A: readings differ 50x
   ];
 
   // --- axis ticks and faint vertical grid ------------------------------
