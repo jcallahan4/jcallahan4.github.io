@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="ContentApp">
+  <Id>d66e5825-8591-4ba5-b33e-4a83671f2cea</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Jake Callahan</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Simulated Experiment Widget"/>
+  <Description DefaultValue="Interactive stepper: sample a hypothetical world, simulate its observation, compute the posterior and information gain, repeat, and average into expected information gain."/>
+  <IconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://www.jake-callahan.com"/>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/simulated-experiment.html"/>
+    <RequestedWidth>880</RequestedWidth>
+    <RequestedHeight>440</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>ReadDocument</Permissions>
+</OfficeApp>
