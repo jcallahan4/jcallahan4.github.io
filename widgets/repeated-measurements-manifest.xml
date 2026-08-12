@@ -16,8 +16,8 @@
   </Hosts>
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/repeated-measurements.html"/>
-    <RequestedWidth>960</RequestedWidth>
-    <RequestedHeight>280</RequestedHeight>
+    <RequestedWidth>740</RequestedWidth>
+    <RequestedHeight>340</RequestedHeight>
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 </OfficeApp>
