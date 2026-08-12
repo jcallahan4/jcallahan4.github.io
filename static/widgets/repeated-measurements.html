@@ -82,9 +82,13 @@
     <rect x="20" y="14" width="92" height="28"/>
     <text x="66" y="32" text-anchor="middle">MEASURE</text>
   </g>
-  <g id="btn-reset" class="btn">
+  <g id="btn-batch" class="btn primary">
     <rect x="20" y="50" width="92" height="28"/>
-    <text x="66" y="68" text-anchor="middle">RESET</text>
+    <text x="66" y="68" text-anchor="middle">&#215;100</text>
+  </g>
+  <g id="btn-reset" class="btn">
+    <rect x="20" y="86" width="92" height="28"/>
+    <text x="66" y="104" text-anchor="middle">RESET</text>
   </g>
 
   <!-- left panel: sensor -->
@@ -177,9 +181,31 @@
   var dotsGroup = document.getElementById("dots");
   var flyingGroup = document.getElementById("flying");
   var countLabel = document.getElementById("count-label");
-  var binCounts = {};   // bin index -> dots landed
+  var bins = {};        // bin index -> landed dot elements, in stack order
   var pendingBin = {};  // bin index -> dots in flight (reserve stack slots)
   var landed = 0;
+
+  // tallest stack, counting dots still in flight
+  function maxStack() {
+    var m = 0, k;
+    for (k in bins) m = Math.max(m, bins[k].length + (pendingBin[k] || 0));
+    for (k in pendingBin) m = Math.max(m, (bins[k] ? bins[k].length : 0) + pendingBin[k]);
+    return m;
+  }
+
+  // compress stacks so the tallest always fits in the panel
+  function layout() {
+    var m = maxStack();
+    var step = Math.min(DOT_STEP, m > 0 ? (GROUND - 78) / m : DOT_STEP);
+    var r = Math.min(DOT_R, Math.max(2.5, step * 0.45 + 1));
+    for (var k in bins) {
+      bins[k].forEach(function (el, idx) {
+        el.setAttribute("cy", GROUND - 4 - r - idx * step);
+        el.setAttribute("r", r);
+      });
+    }
+    return { step: step, r: r };
+  }
 
   function gauss() {
     var u1 = Math.random() || 1e-9, u2 = Math.random();
@@ -231,19 +257,20 @@
 
   function measure() {
     seqIdx++;
-    var v = MU + SIGMA * probit(vdc(seqIdx)) + 0.0015 * gauss();
-    v = Math.max(V0 + BIN / 2, Math.min(V1 - BIN / 2, v));
+    var v = MU + SIGMA * probit(vdc(seqIdx)) + 0.0025 * gauss();
+    v = Math.max(V0 + 0.003, Math.min(V1 - 0.003, v));
     readout.textContent = v.toFixed(3);
 
     var bin = Math.round((v - MU) / BIN);
-    var slot = (binCounts[bin] || 0) + (pendingBin[bin] || 0);
+    var slot = (bins[bin] ? bins[bin].length : 0) + (pendingBin[bin] || 0);
     pendingBin[bin] = (pendingBin[bin] || 0) + 1;
 
-    var tx = valToPx(MU + bin * BIN);
-    var ty = GROUND - 4 - DOT_R - slot * DOT_STEP;
+    var L = layout();  // pre-compress existing stacks for the incoming dot
+    var tx = valToPx(v);                          // true position on the line
+    var ty = GROUND - 4 - L.r - slot * L.step;    // stack height from its bucket
 
     var dot = document.createElementNS(ns, "circle");
-    dot.setAttribute("r", DOT_R);
+    dot.setAttribute("r", L.r);
     dot.setAttribute("fill", "var(--accent)");
     flyingGroup.appendChild(dot);
 
@@ -258,14 +285,15 @@
     f.el.remove();
     var dot = document.createElementNS(ns, "circle");
     dot.setAttribute("cx", f.x1); dot.setAttribute("cy", f.y1);
-    dot.setAttribute("r", DOT_R);
     dot.setAttribute("fill", "var(--accent)");
     dot.setAttribute("opacity", "0.9");
     dotsGroup.appendChild(dot);
-    binCounts[f.bin] = (binCounts[f.bin] || 0) + 1;
+    if (!bins[f.bin]) bins[f.bin] = [];
+    bins[f.bin].push(dot);
     pendingBin[f.bin]--;
     landed++;
     countLabel.textContent = "N = " + landed;
+    layout();
   }
 
   function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
@@ -297,15 +325,21 @@
   // --- controls -----------------------------------------------------------------
   document.getElementById("btn-measure").addEventListener("click", measure);
 
-  // hidden test hook: open with #demo to auto-generate a batch of readings
-  if (location.hash === "#demo") {
-    for (var k = 0; k < 30; k++) setTimeout(measure, k * 80);
+  function batch(n, gapMs) {
+    for (var k = 0; k < n; k++) setTimeout(measure, k * gapMs);
   }
+  document.getElementById("btn-batch").addEventListener("click", function () {
+    batch(100, 18);
+  });
+
+  // hidden test hook: open with #demo to auto-generate a batch of readings
+  if (location.hash === "#demo") batch(100, 18);
+
   document.getElementById("btn-reset").addEventListener("click", function () {
     flights.forEach(function (f) { f.el.remove(); });
     flights = [];
     while (dotsGroup.firstChild) dotsGroup.firstChild.remove();
-    binCounts = {}; pendingBin = {}; landed = 0; seqIdx = 0;
+    bins = {}; pendingBin = {}; landed = 0; seqIdx = 0;
     countLabel.textContent = "N = 0";
     readout.textContent = "— — —";
   });
