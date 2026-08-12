@@ -83,50 +83,48 @@
 </style>
 </head>
 <body>
-<svg id="scene" viewBox="0 0 960 280" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: click Measure to draw a noisy reading from the sensor; each reading lands on a number line and fills its histogram bin, building a normal distribution around the model prediction.">
+<svg id="scene" viewBox="0 0 740 340" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: click Measure to draw a noisy reading from the sensor; each reading lands on a number line and fills its histogram bin, building a normal distribution around the model prediction.">
 
-  <!-- control buttons -->
+  <!-- control button row -->
   <g id="btn-measure" class="btn primary">
     <rect x="20" y="14" width="92" height="28"/>
     <text x="66" y="32" text-anchor="middle">MEASURE</text>
   </g>
   <g id="btn-batch" class="btn primary">
-    <rect x="20" y="50" width="92" height="28"/>
-    <text x="66" y="68" text-anchor="middle">&#215;100</text>
+    <rect x="120" y="14" width="64" height="28"/>
+    <text x="152" y="32" text-anchor="middle">&#215;100</text>
   </g>
   <g id="btn-reset" class="btn">
-    <rect x="20" y="86" width="92" height="28"/>
-    <text x="66" y="104" text-anchor="middle">RESET</text>
+    <rect x="192" y="14" width="76" height="28"/>
+    <text x="230" y="32" text-anchor="middle">RESET</text>
   </g>
+  <text class="label" id="count-label" x="290" y="32">N = 0</text>
 
   <!-- left panel: sensor -->
   <g id="sensor-group">
-    <line x1="0" y1="102" x2="0" y2="230" stroke="var(--text)" stroke-width="1.5"/>
-    <path d="M -11 86 L 11 86 L 0 102 Z" fill="var(--text)"/>
-    <text class="label" y="258" text-anchor="middle">SENSOR</text>
+    <line x1="0" y1="154" x2="0" y2="290" stroke="var(--text)" stroke-width="1.5"/>
+    <path d="M -11 138 L 11 138 L 0 154 Z" fill="var(--text)"/>
+    <text class="label" y="318" text-anchor="middle">SENSOR</text>
 
-    <rect x="-75" y="8" width="150" height="62" fill="#111318" stroke="var(--line)" stroke-width="1"/>
+    <rect x="-75" y="60" width="150" height="62" fill="#111318" stroke="var(--line)" stroke-width="1"/>
     <path fill="none" stroke="var(--signal)" stroke-width="1.5"
-          d="M -75 18 V 8 H -65 M 65 8 H 75 V 18 M 75 60 V 70 H 65 M -65 70 H -75 V 60"/>
-    <text class="readout-unit" x="0" y="26" text-anchor="middle">SIGNAL</text>
-    <text class="readout" id="readout-value" x="0" y="55" text-anchor="middle">&#8212; &#8212; &#8212;</text>
+          d="M -75 70 V 60 H -65 M 65 60 H 75 V 70 M 75 112 V 122 H 65 M -65 122 H -75 V 112"/>
+    <text class="readout-unit" x="0" y="78" text-anchor="middle">SIGNAL</text>
+    <text class="readout" id="readout-value" x="0" y="107" text-anchor="middle">&#8212; &#8212; &#8212;</text>
   </g>
-  <line x1="130" y1="230" x2="290" y2="230" stroke="var(--line)" stroke-width="1"/>
+  <line x1="20" y1="290" x2="170" y2="290" stroke="var(--line)" stroke-width="1"/>
 
   <!-- panel divider -->
-  <line x1="302" y1="20" x2="302" y2="260" stroke="var(--line-faint)" stroke-width="1"/>
+  <line x1="188" y1="60" x2="188" y2="320" stroke="var(--line-faint)" stroke-width="1"/>
 
   <!-- right panel: histogram bars, then number line on top -->
   <g id="bars"></g>
-  <line x1="330" y1="230" x2="920" y2="230" stroke="var(--line)" stroke-width="1"/>
+  <line x1="210" y1="290" x2="720" y2="290" stroke="var(--line)" stroke-width="1"/>
   <g id="nl-ticks"></g>
 
   <!-- model prediction marker -->
-  <line id="marker" y1="70" y2="230" stroke="var(--signal)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
-  <text class="marker-label" id="marker-label" y="58" text-anchor="middle">MODEL &#183; 0.250</text>
-
-  <!-- dot count -->
-  <text class="label" id="count-label" x="920" y="30" text-anchor="end">N = 0</text>
+  <line id="marker" y1="100" y2="290" stroke="var(--signal)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+  <text class="marker-label" id="marker-label" y="88" text-anchor="middle">MODEL &#183; 0.250</text>
 
   <!-- flying / fading dots -->
   <g id="flying"></g>
@@ -144,12 +142,12 @@
   var BIN = 0.01;       // histogram bin width
 
   // --- layout ------------------------------------------------------------
-  var SENSOR_X = 210, GROUND = 230;
-  var NL0 = 330, NL1 = 920;         // number line pixel extent
-  var V0 = 0.15, V1 = 0.35;         // number line value extent
+  var SENSOR_X = 95, GROUND = 290;
+  var NL0 = 210, NL1 = 720;         // number line pixel extent
+  var V0 = 0.17, V1 = 0.32;         // number line value extent
   var DOT_R = 5;
   var BIN_PX = BIN / (V1 - V0) * (NL1 - NL0);
-  var MAX_BAR = GROUND - 84;        // tallest bar the panel allows
+  var MAX_BAR = GROUND - 112;       // tallest bar the panel allows
 
   function valToPx(v) { return NL0 + (v - V0) / (V1 - V0) * (NL1 - NL0); }
 
@@ -285,7 +283,7 @@
 
     flights.push({
       el: dot, t: 0, dur: 650,
-      x0: SENSOR_X, y0: 55,                     // leave from the signal box
+      x0: SENSOR_X, y0: 107,                    // leave from the signal box
       x1: valToPx(v), y1: GROUND - DOT_R,       // land on the number line
       bin: Math.round((v - MU) / BIN)
     });
