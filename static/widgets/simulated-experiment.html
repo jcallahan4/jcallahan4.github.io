@@ -373,23 +373,55 @@
     });
   }
 
-  // step 2: a green pulse travels from the world to the sensor; y' appears
+  // step 2: the hypothetical source emits signal waves; when the wavefront
+  // reaches the sensor, it records the green observation
   function doSimulateY() {
     yP = g(thetaP) * Math.exp(SIGMA_LOG * gauss());
-    var x0 = tToPx(thetaP), x1 = 784;
-    var pulse = document.createElementNS(ns, "circle");
-    pulse.setAttribute("r", 5);
-    pulse.setAttribute("fill", "var(--signal)");
-    fx.appendChild(pulse);
+    var xs = tToPx(thetaP), xSen = 784;
+    var dist = xSen - xs;
+
+    var N_ARCS = 4, arcs = [];
+    for (var i = 0; i < N_ARCS; i++) {
+      var a = document.createElementNS(ns, "path");
+      a.setAttribute("fill", "none");
+      a.setAttribute("stroke", "var(--accent)");
+      a.setAttribute("stroke-width", "2");
+      fx.appendChild(a);
+      arcs.push(a);
+    }
+    function arcPath(r) {
+      return "M " + (xs - r) + " " + GROUND + " A " + r + " " + r + " 0 0 1 " + (xs + r) + " " + GROUND;
+    }
+
     busy = true;
-    animate(700, function (p) {
-      pulse.setAttribute("cx", x0 + (x1 - x0) * p);
-      pulse.setAttribute("cy", GROUND - 6 - 90 * Math.sin(Math.PI * p));
+    animate(1000, function (p) {
+      for (var i = 0; i < N_ARCS; i++) {
+        var f = p - i * 0.13;                    // trailing wave train
+        if (f <= 0) { arcs[i].setAttribute("opacity", "0"); continue; }
+        var r = Math.max(1, f * dist);
+        arcs[i].setAttribute("d", arcPath(r));
+        var o = Math.min(1, f * 6) * (1 - f) * 0.9;
+        arcs[i].setAttribute("opacity", Math.max(0, o).toFixed(3));
+      }
     }, function () {
-      pulse.remove();
+      arcs.forEach(function (a) { a.remove(); });
       yLabel.textContent = "y′ = " + fmtY(yP);
-      busy = false;
-      setPhase(2);
+      // green ripple at the sensor as it records the reading
+      var ripple = document.createElementNS(ns, "circle");
+      ripple.setAttribute("cx", xSen);
+      ripple.setAttribute("cy", 242);
+      ripple.setAttribute("fill", "none");
+      ripple.setAttribute("stroke", "var(--signal)");
+      ripple.setAttribute("stroke-width", "2");
+      fx.appendChild(ripple);
+      animate(320, function (p) {
+        ripple.setAttribute("r", 2 + 16 * p);
+        ripple.setAttribute("opacity", (1 - p).toFixed(3));
+      }, function () {
+        ripple.remove();
+        busy = false;
+        setPhase(2);
+      });
     });
   }
 
