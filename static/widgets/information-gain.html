@@ -56,14 +56,15 @@
 <body>
 <svg id="scene" viewBox="0 0 880 420" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: scrub the observed measurement y; the red posterior over source location updates live over the amber prior, and an information-gain meter shows the KL divergence from prior to posterior.">
 
-  <!-- y slider (measurement side, green) -->
+  <!-- y selector: four preset observations (measurement side, green) -->
   <text class="label" x="20" y="24">OBSERVED y</text>
-  <g id="slider" style="cursor: ew-resize">
-    <rect x="12" y="34" width="366" height="28" fill="transparent"/>
+  <g id="slider" style="cursor: pointer">
+    <rect x="12" y="34" width="366" height="40" fill="transparent"/>
     <line x1="20" y1="48" x2="370" y2="48" stroke="var(--line)" stroke-width="1.5"/>
+    <g id="slider-ticks"></g>
     <circle id="slider-handle" cy="48" r="7" fill="var(--signal)"/>
   </g>
-  <text class="y-val" id="y-label" x="386" y="52">y = 0.0142</text>
+  <text class="y-val" id="y-label" x="386" y="52">y = 0.024</text>
 
   <!-- information gain meter -->
   <g id="meter">
@@ -124,12 +125,17 @@
 
   // --- model: sensor at d = 12 (off the right edge), log-normal noise -----------
   var D_SENSOR = 12;
-  var SIGMA_LOG = 0.25;
+  var SIGMA_LOG = 0.5;               // a noisy sensor, so some readings teach little
   function g(t) { return 1 / ((D_SENSOR - t) * (D_SENSOR - t)); }
 
-  // y slider range (log scale), spanning the model's reach over theta
-  var Y_MIN = 0.006, Y_MAX = 0.35;
-  var yObs = g(3.6);                 // start consistent with the prior's main bump
+  // four preset observations of deliberately varied informativeness:
+  //   0.010 -> moderate (favors left bump)     KL ~ 0.47
+  //   0.024 -> nearly uninformative            KL ~ 0.12
+  //   0.060 -> stronger (favors right bump)    KL ~ 0.74
+  //   0.200 -> surprise (prior said unlikely)  KL ~ 2.1
+  var PRESETS = [0.010, 0.024, 0.060, 0.200];
+  var presetIdx = 1;                 // start on the uninformative reading
+  var yObs = PRESETS[presetIdx];
 
   // --- grids ---------------------------------------------------------------------
   var GN = 800;
@@ -211,7 +217,7 @@
     }
   }
 
-  // --- slider ------------------------------------------------------------------------
+  // --- preset selector ------------------------------------------------------------
   var SL0 = 20, SL1 = 370;
   var handle = document.getElementById("slider-handle");
   var yLabel = document.getElementById("y-label");
@@ -221,30 +227,76 @@
   var klBar = document.getElementById("kl-bar");
   var KL_FULL = 3;                    // meter saturates at this many nats
 
-  function yToSlider(y) {
-    var f = (Math.log(y) - Math.log(Y_MIN)) / (Math.log(Y_MAX) - Math.log(Y_MIN));
-    return SL0 + f * (SL1 - SL0);
-  }
-  function sliderToY(x) {
-    var f = Math.max(0, Math.min(1, (x - SL0) / (SL1 - SL0)));
-    return Math.exp(Math.log(Y_MIN) + f * (Math.log(Y_MAX) - Math.log(Y_MIN)));
-  }
+  function tickX(i) { return SL0 + i / (PRESETS.length - 1) * (SL1 - SL0); }
+
+  // tick marks and preset values under the track
+  var ticksGroup = document.getElementById("slider-ticks");
+  PRESETS.forEach(function (y, i) {
+    var x = tickX(i);
+    var l = document.createElementNS(ns, "line");
+    l.setAttribute("x1", x); l.setAttribute("x2", x);
+    l.setAttribute("y1", 42); l.setAttribute("y2", 54);
+    l.setAttribute("stroke", "var(--line)");
+    l.setAttribute("stroke-width", "1.5");
+    ticksGroup.appendChild(l);
+    var n = document.createElementNS(ns, "text");
+    n.setAttribute("class", "tick-num");
+    n.setAttribute("x", x); n.setAttribute("y", 70);
+    n.setAttribute("text-anchor", "middle");
+    n.textContent = y.toFixed(3);
+    ticksGroup.appendChild(n);
+  });
+
   function fmtY(y) {
-    return y < 0.02 ? y.toFixed(4) : y.toFixed(3);
+    return y < 0.02 ? y.toFixed(3) : y.toFixed(3);
   }
 
-  function render() {
-    handle.setAttribute("cx", yToSlider(yObs));
+  // tweened display state: posterior masses, KL, handle position
+  var target = posterior();
+  var shown = target.slice();
+  var targetKL = klDivergence(target);
+  var shownKL = targetKL;
+  var targetX = tickX(presetIdx);
+  var shownX = targetX;
+
+  function setPreset(i) {
+    if (i === presetIdx) return;
+    presetIdx = i;
+    yObs = PRESETS[i];
     yLabel.textContent = "y = " + fmtY(yObs);
-    var post = posterior();
-    postEl.setAttribute("d", densPath(post, false));
-    postFillEl.setAttribute("d", densPath(post, true));
-    var kl = klDivergence(post);
-    klLabel.textContent = kl.toFixed(2);
-    var frac = Math.min(1, kl / KL_FULL);
-    klBar.setAttribute("x2", 636 + frac * (844 - 636));
+    target = posterior();
+    targetKL = klDivergence(target);
+    targetX = tickX(i);
   }
-  render();
+  yLabel.textContent = "y = " + fmtY(yObs);
+
+  function paint() {
+    postEl.setAttribute("d", densPath(shown, false));
+    postFillEl.setAttribute("d", densPath(shown, true));
+    klLabel.textContent = shownKL.toFixed(2);
+    var frac = Math.min(1, shownKL / KL_FULL);
+    klBar.setAttribute("x2", 636 + frac * (844 - 636));
+    handle.setAttribute("cx", shownX);
+  }
+  paint();
+
+  var last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    var dt = ts - last;
+    last = ts;
+    var k = 1 - Math.exp(-dt / 110);
+    var moving = false;
+    for (var i = 0; i <= GN; i++) {
+      var d = target[i] - shown[i];
+      if (Math.abs(d) > 1e-9) { shown[i] += d * k; moving = true; }
+    }
+    if (Math.abs(targetKL - shownKL) > 1e-4) { shownKL += (targetKL - shownKL) * k; moving = true; }
+    if (Math.abs(targetX - shownX) > 0.05) { shownX += (targetX - shownX) * k; moving = true; }
+    if (moving) paint();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 
   var dragging = false;
   function eventX(evt) {
@@ -252,18 +304,24 @@
     pt.x = evt.clientX; pt.y = evt.clientY;
     return pt.matrixTransform(svg.getScreenCTM().inverse()).x;
   }
+  function nearestPreset(x) {
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < PRESETS.length; i++) {
+      var d = Math.abs(x - tickX(i));
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
   var slider = document.getElementById("slider");
   slider.addEventListener("pointerdown", function (evt) {
     dragging = true;
-    yObs = sliderToY(eventX(evt));
-    render();
+    setPreset(nearestPreset(eventX(evt)));
     slider.setPointerCapture(evt.pointerId);
     evt.preventDefault();
   });
   slider.addEventListener("pointermove", function (evt) {
     if (!dragging) return;
-    yObs = sliderToY(eventX(evt));
-    render();
+    setPreset(nearestPreset(eventX(evt)));
   });
   slider.addEventListener("pointerup", function () { dragging = false; });
   slider.addEventListener("pointercancel", function () { dragging = false; });
