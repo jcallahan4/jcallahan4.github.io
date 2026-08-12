@@ -11,10 +11,10 @@
 <style>
   :root {
     --bg: #ffffff;
-    --line: #c9ccd0;
-    --line-faint: #edeef0;
+    --line: #9aa1a8;
+    --line-faint: #e3e5e8;
     --text: #1a1d20;
-    --text-dim: #6e7378;
+    --text-dim: #5c6167;
     --accent: #dd8500;
     --signal: #18a05c;
     --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -58,7 +58,7 @@
   <g id="grid"></g>
 
   <!-- ground line -->
-  <line x1="40" y1="190" x2="920" y2="190" stroke="var(--line)" stroke-width="1"/>
+  <line x1="40" y1="190" x2="920" y2="190" stroke="var(--line)" stroke-width="1.5"/>
   <g id="axis-ticks"></g>
 
   <!-- ghost candidate sources (position unknown) -->
@@ -67,13 +67,13 @@
 
   <!-- sensor (fixed) -->
   <g id="sensor-group">
-    <line x1="0" y1="102" x2="0" y2="190" stroke="var(--text)" stroke-width="1.5"/>
+    <line x1="0" y1="102" x2="0" y2="190" stroke="var(--text)" stroke-width="2"/>
     <path d="M -11 86 L 11 86 L 0 102 Z" fill="var(--text)"/>
     <text class="label" y="220" text-anchor="middle">SENSOR</text>
 
     <!-- readout box with corner brackets -->
-    <rect x="-75" y="8" width="150" height="62" fill="#f6f6f4" stroke="var(--line)" stroke-width="1"/>
-    <path fill="none" stroke="var(--signal)" stroke-width="1.5"
+    <rect x="-75" y="8" width="150" height="62" fill="#f6f6f4" stroke="var(--line)" stroke-width="1.5"/>
+    <path fill="none" stroke="var(--signal)" stroke-width="2"
           d="M -75 18 V 8 H -65 M 65 8 H 75 V 18 M 75 60 V 70 H 65 M -65 70 H -75 V 60"/>
     <text class="readout-unit" x="0" y="26" text-anchor="middle">SIGNAL</text>
     <text class="readout" id="readout-value" x="0" y="55" text-anchor="middle">?</text>
@@ -103,14 +103,14 @@
     t.setAttribute("x1", x); t.setAttribute("x2", x);
     t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
     t.setAttribute("stroke", "var(--line)");
-    t.setAttribute("stroke-width", "1");
+    t.setAttribute("stroke-width", "1.5");
     ticks.appendChild(t);
 
     var g = document.createElementNS(ns, "line");
     g.setAttribute("x1", x); g.setAttribute("x2", x);
     g.setAttribute("y1", 8); g.setAttribute("y2", GROUND);
     g.setAttribute("stroke", "var(--line-faint)");
-    g.setAttribute("stroke-width", "1");
+    g.setAttribute("stroke-width", "1.5");
     grid.appendChild(g);
   }
 

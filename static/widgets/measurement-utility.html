@@ -11,10 +11,10 @@
 <style>
   :root {
     --bg: #ffffff;
-    --line: #c9ccd0;
-    --line-faint: #edeef0;
+    --line: #9aa1a8;
+    --line-faint: #e3e5e8;
     --text: #1a1d20;
-    --text-dim: #6e7378;
+    --text-dim: #5c6167;
     --accent: #dd8500;
     --signal: #18a05c;
     --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -76,7 +76,7 @@
   <g id="arc-holder"><g id="arcs"></g></g>
 
   <!-- ground line -->
-  <line x1="40" y1="200" x2="920" y2="200" stroke="var(--line)" stroke-width="1"/>
+  <line x1="40" y1="200" x2="920" y2="200" stroke="var(--line)" stroke-width="1.5"/>
   <g id="axis-ticks"></g>
 
   <!-- candidate sources -->
@@ -120,14 +120,14 @@
     t.setAttribute("x1", x); t.setAttribute("x2", x);
     t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
     t.setAttribute("stroke", "var(--line)");
-    t.setAttribute("stroke-width", "1");
+    t.setAttribute("stroke-width", "1.5");
     ticks.appendChild(t);
 
     var g = document.createElementNS(ns, "line");
     g.setAttribute("x1", x); g.setAttribute("x2", x);
     g.setAttribute("y1", 8); g.setAttribute("y2", GROUND);
     g.setAttribute("stroke", "var(--line-faint)");
-    g.setAttribute("stroke-width", "1");
+    g.setAttribute("stroke-width", "1.5");
     grid.appendChild(g);
   }
 
@@ -164,14 +164,14 @@
     var g = el("g", { transform: "translate(" + gx + ",0)" });
 
     // mast + head
-    g.appendChild(el("line", { x1: 0, y1: 118, x2: 0, y2: GROUND, stroke: "var(--text)", "stroke-width": 1.5 }));
+    g.appendChild(el("line", { x1: 0, y1: 118, x2: 0, y2: GROUND, stroke: "var(--text)", "stroke-width": 2 }));
     g.appendChild(el("path", { d: "M -11 102 L 11 102 L 0 118 Z", fill: "var(--text)" }));
 
     // box with corner brackets
     var BW = 130, BH = 78, bx = -BW / 2, by = 8, B = 10;
-    g.appendChild(el("rect", { x: bx, y: by, width: BW, height: BH, fill: "#f6f6f4", stroke: "var(--line)", "stroke-width": 1 }));
+    g.appendChild(el("rect", { x: bx, y: by, width: BW, height: BH, fill: "#f6f6f4", stroke: "var(--line)", "stroke-width": 1.5 }));
     g.appendChild(el("path", {
-      fill: "none", stroke: "var(--signal)", "stroke-width": 1.5,
+      fill: "none", stroke: "var(--signal)", "stroke-width": 2,
       d: "M " + bx + " " + (by + B) + " V " + by + " H " + (bx + B) +
          " M " + (bx + BW - B) + " " + by + " H " + (bx + BW) + " V " + (by + B) +
          " M " + (bx + BW) + " " + (by + BH - B) + " V " + (by + BH) + " H " + (bx + BW - B) +
@@ -202,7 +202,7 @@
   var N_ARCS = 4, R_MIN = 16, R_MAX = 120;
   var arcs = [];
   for (var i = 0; i < N_ARCS; i++) {
-    var a = el("path", { fill: "none", stroke: "var(--accent)", "stroke-width": 1.5 });
+    var a = el("path", { fill: "none", stroke: "var(--accent)", "stroke-width": 2 });
     arcsGroup.appendChild(a);
     arcs.push(a);
   }

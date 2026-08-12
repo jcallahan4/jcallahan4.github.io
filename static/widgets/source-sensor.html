@@ -11,10 +11,10 @@
 <style>
   :root {
     --bg: #ffffff;
-    --line: #c9ccd0;
-    --line-faint: #edeef0;
+    --line: #9aa1a8;
+    --line-faint: #e3e5e8;
     --text: #1a1d20;
-    --text-dim: #6e7378;
+    --text-dim: #5c6167;
     --accent: #dd8500;
     --signal: #18a05c;
     --mono: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -61,7 +61,7 @@
   <g id="grid"></g>
 
   <!-- ground line -->
-  <line x1="60" y1="300" x2="900" y2="300" stroke="var(--line)" stroke-width="1"/>
+  <line x1="60" y1="300" x2="900" y2="300" stroke="var(--line)" stroke-width="1.5"/>
   <g id="axis-ticks"></g>
 
   <!-- signal arcs + source (translated as a unit) -->
@@ -70,21 +70,21 @@
     <!-- hit target (invisible, generous) -->
     <circle cx="0" cy="300" r="40" fill="transparent"/>
     <!-- source marker -->
-    <circle id="source-ring" cx="0" cy="300" r="16" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+    <circle id="source-ring" cx="0" cy="300" r="16" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/>
     <circle cx="0" cy="300" r="7" fill="var(--accent)"/>
     <text class="label" x="0" y="330" text-anchor="middle">SOURCE</text>
   </g>
 
   <!-- sensor (fixed) -->
   <g id="sensor-group">
-    <line id="sensor-mast" y2="300" stroke="var(--text)" stroke-width="1.5"/>
+    <line id="sensor-mast" y2="300" stroke="var(--text)" stroke-width="2"/>
     <path id="sensor-head" fill="var(--text)"/>
     <text class="label" id="sensor-label" y="330" text-anchor="middle">SENSOR</text>
 
     <!-- readout box with corner brackets -->
     <g id="readout-box">
-      <rect id="readout-rect" fill="#f6f6f4" stroke="var(--line)" stroke-width="1"/>
-      <path id="brackets" fill="none" stroke="var(--signal)" stroke-width="1.5"/>
+      <rect id="readout-rect" fill="#f6f6f4" stroke="var(--line)" stroke-width="1.5"/>
+      <path id="brackets" fill="none" stroke="var(--signal)" stroke-width="2"/>
       <text class="readout-unit" id="readout-title" text-anchor="middle">SIGNAL</text>
       <text class="readout" id="readout-value" text-anchor="middle">0.000</text>
     </g>
@@ -119,14 +119,14 @@
     t.setAttribute("x1", x); t.setAttribute("x2", x);
     t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
     t.setAttribute("stroke", "var(--line)");
-    t.setAttribute("stroke-width", "1");
+    t.setAttribute("stroke-width", "1.5");
     ticks.appendChild(t);
 
     var g = document.createElementNS(ns, "line");
     g.setAttribute("x1", x); g.setAttribute("x2", x);
     g.setAttribute("y1", 40); g.setAttribute("y2", GROUND);
     g.setAttribute("stroke", "var(--line-faint)");
-    g.setAttribute("stroke-width", "1");
+    g.setAttribute("stroke-width", "1.5");
     grid.appendChild(g);
   }
 
@@ -177,7 +177,7 @@
     var a = document.createElementNS(ns, "path");
     a.setAttribute("fill", "none");
     a.setAttribute("stroke", "var(--accent)");
-    a.setAttribute("stroke-width", "1.5");
+    a.setAttribute("stroke-width", "2");
     arcsGroup.appendChild(a);
     arcs.push(a);
   }
