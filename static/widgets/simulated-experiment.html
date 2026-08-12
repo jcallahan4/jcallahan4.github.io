@@ -294,10 +294,17 @@
       var a = anims[i];
       a.t += dt;
       var p = Math.min(1, a.t / a.dur);
-      a.step(easeInOut(p));
-      if (p >= 1) {
+      // a throwing animation is dropped (and unblocks the UI) instead of
+      // killing the whole animation loop
+      try {
+        a.step(easeInOut(p));
+        if (p >= 1) {
+          anims.splice(i, 1);
+          if (a.done) a.done();
+        }
+      } catch (err) {
         anims.splice(i, 1);
-        if (a.done) a.done();
+        busy = false;
       }
     }
 
@@ -411,15 +418,17 @@
 
   function doAgain() {
     var i = runs.length;
-    runs.push(klP);
+    var score = klP;               // capture before the stage is cleared below
+    runs.push(score);
 
     // flying copy of the score
     var flyer = document.createElementNS(ns, "text");
     flyer.setAttribute("class", "ig-entry");
-    flyer.setAttribute("x", 394); flyer.setAttribute("y", 60);
-    flyer.textContent = klP.toFixed(2);
+    flyer.setAttribute("text-anchor", "end");
+    flyer.setAttribute("x", 452); flyer.setAttribute("y", 60);
+    flyer.textContent = score.toFixed(2);
     fx.appendChild(flyer);
-    var x0 = 394, y0 = 60, x1 = 860, y1 = runSlotY(i);
+    var x0 = 452, y0 = 60, x1 = 860, y1 = runSlotY(i);
     busy = true;
     animate(550, function (p) {
       flyer.setAttribute("x", x0 + (x1 - x0) * p);
@@ -430,7 +439,7 @@
       entry.setAttribute("class", "ig-entry");
       entry.setAttribute("x", 860); entry.setAttribute("y", runSlotY(i));
       entry.setAttribute("text-anchor", "end");
-      entry.textContent = "IG" + subscript(i + 1) + " = " + klP.toFixed(2);
+      entry.textContent = "IG" + subscript(i + 1) + " = " + score.toFixed(2);
       runsGroup.appendChild(entry);
       busy = false;
       setAverageEnabled(runs.length >= 2);
