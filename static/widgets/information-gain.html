@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Information Gain</title>
+<!-- Office.js handshake so the page can run as a PowerPoint content add-in.
+     Harmless in a normal browser; the page does not depend on it. -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --line: #9aa1a8;
+    --line-faint: #e3e5e8;
+    --text: #1a1d20;
+    --text-dim: #5c6167;
+    --accent: #dd8500;
+    --signal: #18a05c;
+    --posterior: #d0453e;
+    --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--font);
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font);
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .tick-num {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .math-amber { fill: var(--accent); font-size: 12px; letter-spacing: 0.06em; }
+  .math-red { fill: var(--posterior); font-size: 12px; letter-spacing: 0.06em; }
+  .y-val { fill: var(--signal); font-size: 12px; letter-spacing: 0.06em; }
+  .kl-val { fill: var(--posterior); font-size: 24px; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 880 420" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: scrub the observed measurement y; the red posterior over source location updates live over the amber prior, and an information-gain meter shows the KL divergence from prior to posterior.">
+
+  <!-- y slider (measurement side, green) -->
+  <text class="label" x="20" y="24">OBSERVED y</text>
+  <g id="slider" style="cursor: ew-resize">
+    <rect x="12" y="34" width="366" height="28" fill="transparent"/>
+    <line x1="20" y1="48" x2="370" y2="48" stroke="var(--line)" stroke-width="1.5"/>
+    <circle id="slider-handle" cy="48" r="7" fill="var(--signal)"/>
+  </g>
+  <text class="y-val" id="y-label" x="386" y="52">y = 0.0142</text>
+
+  <!-- information gain meter -->
+  <g id="meter">
+    <rect x="620" y="12" width="240" height="76" fill="#f6f6f4" stroke="var(--line)" stroke-width="1.5"/>
+    <path fill="none" stroke="var(--posterior)" stroke-width="2"
+          d="M 620 22 V 12 H 630 M 850 12 H 860 V 22 M 860 78 V 88 H 850 M 630 88 H 620 V 78"/>
+    <text class="label" x="636" y="34">INFORMATION GAIN &#183; D&#8342;&#8343;</text>
+    <text class="kl-val" id="kl-label" x="636" y="62">0.00</text>
+    <line x1="636" y1="74" x2="844" y2="74" stroke="var(--line-faint)" stroke-width="6" stroke-linecap="round"/>
+    <line id="kl-bar" x1="636" y1="74" x2="636" y2="74" stroke="var(--posterior)" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- curves -->
+  <path id="prior-fill" fill="var(--accent)" fill-opacity="0.10"/>
+  <path id="prior" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <path id="post-fill" fill="var(--posterior)" fill-opacity="0.12"/>
+  <path id="post" fill="none" stroke="var(--posterior)" stroke-width="2.5"/>
+
+  <!-- legend (math only) -->
+  <g id="legend">
+    <line x1="20" y1="96" x2="44" y2="96" stroke="var(--accent)" stroke-width="2"/>
+    <text class="math-amber" x="52" y="100">p(&#952;)</text>
+    <line x1="110" y1="96" x2="134" y2="96" stroke="var(--posterior)" stroke-width="2.5"/>
+    <text class="math-red" x="142" y="100">p(&#952; | y, d)</text>
+  </g>
+
+  <!-- theta axis -->
+  <line x1="40" y1="360" x2="840" y2="360" stroke="var(--line)" stroke-width="1.5"/>
+  <g id="axis-ticks"></g>
+</svg>
+
+<script>
+(function () {
+  "use strict";
+
+  var svg = document.getElementById("scene");
+  var ns = "http://www.w3.org/2000/svg";
+
+  // --- geometry -----------------------------------------------------------
+  var PX0 = 40, PX1 = 840, GROUND = 360;
+  var T0 = 0, T1 = 10;
+  var PRIOR_H = 90;                 // pixel height of the prior peak
+  function tToPx(t) { return PX0 + (t - T0) / (T1 - T0) * (PX1 - PX0); }
+
+  // --- prior: same mixture as the quantifying-belief widget --------------------
+  var COMP = [
+    { w: 0.6, mu: 3.6, s: 1.1 },
+    { w: 0.4, mu: 7.1, s: 0.75 }
+  ];
+  function priorPdf(t) {
+    var p = 0;
+    for (var i = 0; i < COMP.length; i++) {
+      var c = COMP[i], z = (t - c.mu) / c.s;
+      p += c.w * Math.exp(-0.5 * z * z) / (c.s * Math.sqrt(2 * Math.PI));
+    }
+    return p;
+  }
+
+  // --- model: sensor at d = 12 (off the right edge), log-normal noise -----------
+  var D_SENSOR = 12;
+  var SIGMA_LOG = 0.25;
+  function g(t) { return 1 / ((D_SENSOR - t) * (D_SENSOR - t)); }
+
+  // y slider range (log scale), spanning the model's reach over theta
+  var Y_MIN = 0.006, Y_MAX = 0.35;
+  var yObs = g(3.6);                 // start consistent with the prior's main bump
+
+  // --- grids ---------------------------------------------------------------------
+  var GN = 800;
+  var TS = [], PRIOR = [], priorMax = 0;
+  (function () {
+    var sum = 0;
+    for (var i = 0; i <= GN; i++) {
+      var t = T0 + i / GN * (T1 - T0);
+      TS.push(t);
+      var p = priorPdf(t);
+      PRIOR.push(p);
+      sum += p;
+    }
+    for (var j = 0; j <= GN; j++) {
+      PRIOR[j] /= sum;               // normalized masses on the grid
+      priorMax = Math.max(priorMax, PRIOR[j]);
+    }
+  })();
+
+  // posterior masses for the current y
+  function posterior() {
+    var post = [], sum = 0;
+    var ly = Math.log(yObs);
+    for (var i = 0; i <= GN; i++) {
+      var z = (ly - Math.log(g(TS[i]))) / SIGMA_LOG;
+      var like = Math.exp(-0.5 * z * z);
+      var m = PRIOR[i] * like;
+      post.push(m);
+      sum += m;
+    }
+    for (var j = 0; j <= GN; j++) post[j] /= sum;
+    return post;
+  }
+
+  function klDivergence(post) {
+    var kl = 0;
+    for (var i = 0; i <= GN; i++) {
+      if (post[i] > 1e-12) kl += post[i] * Math.log(post[i] / PRIOR[i]);
+    }
+    return kl;
+  }
+
+  // --- drawing ----------------------------------------------------------------------
+  // pixel scale: prior peak = PRIOR_H
+  var SCALE = PRIOR_H / priorMax;
+
+  function densPath(masses, closed) {
+    var d = "M " + PX0 + " " + GROUND;
+    var step = Math.max(1, Math.floor(GN / 400));
+    for (var i = 0; i <= GN; i += step) {
+      var y = GROUND - Math.min(masses[i] * SCALE, 315);
+      d += " L " + tToPx(TS[i]).toFixed(1) + " " + y.toFixed(1);
+    }
+    d += " L " + PX1 + " " + GROUND;
+    if (closed) d += " Z";
+    return d;
+  }
+
+  document.getElementById("prior").setAttribute("d", densPath(PRIOR, false));
+  document.getElementById("prior-fill").setAttribute("d", densPath(PRIOR, true));
+
+  // axis ticks
+  var ticks = document.getElementById("axis-ticks");
+  for (var u = T0; u <= T1; u++) {
+    var x = tToPx(u);
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1.5");
+    ticks.appendChild(t);
+    if (u % 2 === 0) {
+      var n = document.createElementNS(ns, "text");
+      n.setAttribute("class", "tick-num");
+      n.setAttribute("x", x); n.setAttribute("y", GROUND + 24);
+      n.setAttribute("text-anchor", "middle");
+      n.textContent = "θ = " + u;
+      ticks.appendChild(n);
+    }
+  }
+
+  // --- slider ------------------------------------------------------------------------
+  var SL0 = 20, SL1 = 370;
+  var handle = document.getElementById("slider-handle");
+  var yLabel = document.getElementById("y-label");
+  var postEl = document.getElementById("post");
+  var postFillEl = document.getElementById("post-fill");
+  var klLabel = document.getElementById("kl-label");
+  var klBar = document.getElementById("kl-bar");
+  var KL_FULL = 3;                    // meter saturates at this many nats
+
+  function yToSlider(y) {
+    var f = (Math.log(y) - Math.log(Y_MIN)) / (Math.log(Y_MAX) - Math.log(Y_MIN));
+    return SL0 + f * (SL1 - SL0);
+  }
+  function sliderToY(x) {
+    var f = Math.max(0, Math.min(1, (x - SL0) / (SL1 - SL0)));
+    return Math.exp(Math.log(Y_MIN) + f * (Math.log(Y_MAX) - Math.log(Y_MIN)));
+  }
+  function fmtY(y) {
+    return y < 0.02 ? y.toFixed(4) : y.toFixed(3);
+  }
+
+  function render() {
+    handle.setAttribute("cx", yToSlider(yObs));
+    yLabel.textContent = "y = " + fmtY(yObs);
+    var post = posterior();
+    postEl.setAttribute("d", densPath(post, false));
+    postFillEl.setAttribute("d", densPath(post, true));
+    var kl = klDivergence(post);
+    klLabel.textContent = kl.toFixed(2);
+    var frac = Math.min(1, kl / KL_FULL);
+    klBar.setAttribute("x2", 636 + frac * (844 - 636));
+  }
+  render();
+
+  var dragging = false;
+  function eventX(evt) {
+    var pt = svg.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse()).x;
+  }
+  var slider = document.getElementById("slider");
+  slider.addEventListener("pointerdown", function (evt) {
+    dragging = true;
+    yObs = sliderToY(eventX(evt));
+    render();
+    slider.setPointerCapture(evt.pointerId);
+    evt.preventDefault();
+  });
+  slider.addEventListener("pointermove", function (evt) {
+    if (!dragging) return;
+    yObs = sliderToY(eventX(evt));
+    render();
+  });
+  slider.addEventListener("pointerup", function () { dragging = false; });
+  slider.addEventListener("pointercancel", function () { dragging = false; });
+})();
+</script>
+</body>
+</html>
