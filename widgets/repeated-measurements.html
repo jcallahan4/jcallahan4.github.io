@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repeated Measurements</title>
+<!-- Office.js handshake so the page can run as a PowerPoint content add-in.
+     Harmless in a normal browser; the page does not depend on it. -->
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --bg: #0b0c0e;
+    --line: #3a3e44;
+    --line-faint: #212429;
+    --text: #e8e6e1;
+    --text-dim: #8a8f96;
+    --accent: #ffb000;
+    --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: var(--font);
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    font-family: var(--font);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .label {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .tick-num {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+  .readout {
+    fill: var(--text);
+    font-size: 26px;
+    letter-spacing: 0.04em;
+  }
+  .readout-unit {
+    fill: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  .marker-label {
+    fill: var(--accent);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+  }
+  .btn { cursor: pointer; }
+  .btn rect { fill: transparent; stroke: var(--line); stroke-width: 1; }
+  .btn text {
+    fill: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+  .btn:hover rect { stroke: var(--text-dim); }
+  .btn:hover text { fill: var(--text); }
+  .btn.primary rect { stroke: var(--accent); }
+  .btn.primary text { fill: var(--accent); }
+  .btn.primary:hover rect { fill: var(--accent); }
+  .btn.primary:hover text { fill: var(--bg); }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 960 280" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: click Measure to draw a noisy reading from the sensor; readings accumulate as a dot plot on a number line, clustering around the model prediction.">
+
+  <!-- control buttons -->
+  <g id="btn-measure" class="btn primary">
+    <rect x="20" y="14" width="92" height="28"/>
+    <text x="66" y="32" text-anchor="middle">MEASURE</text>
+  </g>
+  <g id="btn-reset" class="btn">
+    <rect x="20" y="50" width="92" height="28"/>
+    <text x="66" y="68" text-anchor="middle">RESET</text>
+  </g>
+
+  <!-- left panel: sensor -->
+  <g id="sensor-group">
+    <line x1="0" y1="102" x2="0" y2="230" stroke="var(--text)" stroke-width="1.5"/>
+    <path d="M -11 86 L 11 86 L 0 102 Z" fill="var(--text)"/>
+    <text class="label" y="258" text-anchor="middle">SENSOR</text>
+
+    <rect x="-75" y="8" width="150" height="62" fill="#111318" stroke="var(--line)" stroke-width="1"/>
+    <path fill="none" stroke="var(--accent)" stroke-width="1.5"
+          d="M -75 18 V 8 H -65 M 65 8 H 75 V 18 M 75 60 V 70 H 65 M -65 70 H -75 V 60"/>
+    <text class="readout-unit" x="0" y="26" text-anchor="middle">SIGNAL</text>
+    <text class="readout" id="readout-value" x="0" y="55" text-anchor="middle">&#8212; &#8212; &#8212;</text>
+  </g>
+  <line x1="130" y1="230" x2="290" y2="230" stroke="var(--line)" stroke-width="1"/>
+
+  <!-- panel divider -->
+  <line x1="302" y1="20" x2="302" y2="260" stroke="var(--line-faint)" stroke-width="1"/>
+
+  <!-- right panel: number line -->
+  <line x1="330" y1="230" x2="920" y2="230" stroke="var(--line)" stroke-width="1"/>
+  <g id="nl-ticks"></g>
+
+  <!-- model prediction marker -->
+  <line id="marker" y1="70" y2="230" stroke="var(--accent)" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+  <text class="marker-label" id="marker-label" y="58" text-anchor="middle">MODEL &#183; 0.250</text>
+
+  <!-- dot count -->
+  <text class="label" id="count-label" x="920" y="30" text-anchor="end">N = 0</text>
+
+  <!-- landed dots -->
+  <g id="dots"></g>
+  <!-- flying dots -->
+  <g id="flying"></g>
+</svg>
+
+<script>
+(function () {
+  "use strict";
+
+  var ns = "http://www.w3.org/2000/svg";
+
+  // --- model -----------------------------------------------------------
+  var MU = 0.250;       // model prediction g(theta)
+  var SIGMA = 0.025;    // noise standard deviation
+  var BIN = 0.01;       // dot-plot quantization
+
+  // --- layout ------------------------------------------------------------
+  var SENSOR_X = 210, GROUND = 230;
+  var NL0 = 330, NL1 = 920;         // number line pixel extent
+  var V0 = 0.15, V1 = 0.35;         // number line value extent
+  var DOT_R = 5, DOT_STEP = 12;
+
+  function valToPx(v) { return NL0 + (v - V0) / (V1 - V0) * (NL1 - NL0); }
+
+  document.getElementById("sensor-group")
+    .setAttribute("transform", "translate(" + SENSOR_X + ",0)");
+
+  // number line ticks: minor every 0.01, labeled every 0.05
+  var nlTicks = document.getElementById("nl-ticks");
+  for (var v = V0; v <= V1 + 1e-9; v += BIN) {
+    var vv = Math.round(v * 100) / 100;
+    var x = valToPx(vv);
+    var major = Math.round(vv * 100) % 5 === 0;
+    var t = document.createElementNS(ns, "line");
+    t.setAttribute("x1", x); t.setAttribute("x2", x);
+    t.setAttribute("y1", GROUND);
+    t.setAttribute("y2", GROUND + (major ? 8 : 4));
+    t.setAttribute("stroke", "var(--line)");
+    t.setAttribute("stroke-width", "1");
+    nlTicks.appendChild(t);
+    if (major) {
+      var n = document.createElementNS(ns, "text");
+      n.setAttribute("class", "tick-num");
+      n.setAttribute("x", x); n.setAttribute("y", GROUND + 24);
+      n.setAttribute("text-anchor", "middle");
+      n.textContent = vv.toFixed(2);
+      nlTicks.appendChild(n);
+    }
+  }
+
+  // model prediction marker
+  var mx = valToPx(MU);
+  var marker = document.getElementById("marker");
+  marker.setAttribute("x1", mx); marker.setAttribute("x2", mx);
+  document.getElementById("marker-label").setAttribute("x", mx);
+
+  // --- state ---------------------------------------------------------------
+  var readout = document.getElementById("readout-value");
+  var dotsGroup = document.getElementById("dots");
+  var flyingGroup = document.getElementById("flying");
+  var countLabel = document.getElementById("count-label");
+  var binCounts = {};   // bin index -> dots landed
+  var pendingBin = {};  // bin index -> dots in flight (reserve stack slots)
+  var landed = 0;
+
+  function gauss() {
+    var u1 = Math.random() || 1e-9, u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  // --- flying dot animation ---------------------------------------------------
+  var flights = [];
+
+  function measure() {
+    var v = MU + SIGMA * gauss();
+    v = Math.max(V0 + BIN / 2, Math.min(V1 - BIN / 2, v));
+    readout.textContent = v.toFixed(3);
+
+    var bin = Math.round((v - MU) / BIN);
+    var slot = (binCounts[bin] || 0) + (pendingBin[bin] || 0);
+    pendingBin[bin] = (pendingBin[bin] || 0) + 1;
+
+    var tx = valToPx(MU + bin * BIN);
+    var ty = GROUND - 4 - DOT_R - slot * DOT_STEP;
+
+    var dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("r", DOT_R);
+    dot.setAttribute("fill", "var(--accent)");
+    flyingGroup.appendChild(dot);
+
+    flights.push({
+      el: dot, t: 0, dur: 650,
+      x0: SENSOR_X, y0: 55,       // leave from the signal box
+      x1: tx, y1: ty, bin: bin
+    });
+  }
+
+  function land(f) {
+    f.el.remove();
+    var dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("cx", f.x1); dot.setAttribute("cy", f.y1);
+    dot.setAttribute("r", DOT_R);
+    dot.setAttribute("fill", "var(--accent)");
+    dot.setAttribute("opacity", "0.9");
+    dotsGroup.appendChild(dot);
+    binCounts[f.bin] = (binCounts[f.bin] || 0) + 1;
+    pendingBin[f.bin]--;
+    landed++;
+    countLabel.textContent = "N = " + landed;
+  }
+
+  function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+  var last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    var dt = ts - last;
+    last = ts;
+
+    for (var i = flights.length - 1; i >= 0; i--) {
+      var f = flights[i];
+      f.t += dt;
+      var p = Math.min(1, f.t / f.dur);
+      var e = easeInOut(p);
+      var x = f.x0 + (f.x1 - f.x0) * e;
+      var y = f.y0 + (f.y1 - f.y0) * e - 60 * Math.sin(Math.PI * p); // slight arc
+      f.el.setAttribute("cx", x);
+      f.el.setAttribute("cy", y);
+      if (p >= 1) {
+        land(f);
+        flights.splice(i, 1);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // --- controls -----------------------------------------------------------------
+  document.getElementById("btn-measure").addEventListener("click", measure);
+
+  // hidden test hook: open with #demo to auto-generate a batch of readings
+  if (location.hash === "#demo") {
+    for (var k = 0; k < 30; k++) setTimeout(measure, k * 80);
+  }
+  document.getElementById("btn-reset").addEventListener("click", function () {
+    flights.forEach(function (f) { f.el.remove(); });
+    flights = [];
+    while (dotsGroup.firstChild) dotsGroup.firstChild.remove();
+    binCounts = {}; pendingBin = {}; landed = 0;
+    countLabel.textContent = "N = 0";
+    readout.textContent = "— — —";
+  });
+})();
+</script>
+</body>
+</html>
