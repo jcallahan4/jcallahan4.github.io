@@ -11,10 +11,10 @@
 <style>
   :root {
     --bg: #ffffff;
-    --line: #c9ccd0;
-    --line-faint: #edeef0;
+    --line: #9aa1a8;
+    --line-faint: #e3e5e8;
     --text: #1a1d20;
-    --text-dim: #6e7378;
+    --text-dim: #5c6167;
     --accent: #dd8500;
     --signal: #18a05c;
     --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -57,7 +57,7 @@
     letter-spacing: 0.06em;
   }
   .btn { cursor: pointer; }
-  .btn rect { fill: transparent; stroke: var(--line); stroke-width: 1; }
+  .btn rect { fill: transparent; stroke: var(--line); stroke-width: 1.5; }
   .btn text {
     fill: var(--text-dim);
     font-size: 10px;
@@ -72,7 +72,7 @@
     fill-opacity: 0.18;
     stroke: var(--accent);
     stroke-opacity: 0.7;
-    stroke-width: 1;
+    stroke-width: 1.5;
   }
 </style>
 </head>
@@ -113,21 +113,21 @@
 
   <!-- belief curve -->
   <path id="curve-fill" fill="var(--accent)" fill-opacity="0.10"/>
-  <path id="curve" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+  <path id="curve" fill="none" stroke="var(--accent)" stroke-width="2"/>
 
   <!-- theta axis -->
-  <line x1="40" y1="310" x2="840" y2="310" stroke="var(--line)" stroke-width="1"/>
+  <line x1="40" y1="310" x2="840" y2="310" stroke="var(--line)" stroke-width="1.5"/>
   <g id="axis-ticks"></g>
 
   <!-- ratio mode overlay -->
   <g id="g-ratio" visibility="hidden">
     <g id="cursor-a">
-      <line y2="310" stroke="var(--text)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+      <line y2="310" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>
       <circle r="5" fill="var(--accent)"/>
       <text class="density-val" y="-14" text-anchor="middle">0.000</text>
     </g>
     <g id="cursor-b">
-      <line y2="310" stroke="var(--text)" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+      <line y2="310" stroke="var(--text)" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>
       <circle r="5" fill="var(--accent)"/>
       <text class="density-val" y="-14" text-anchor="middle">0.000</text>
     </g>
@@ -221,7 +221,7 @@
     t.setAttribute("x1", x); t.setAttribute("x2", x);
     t.setAttribute("y1", GROUND); t.setAttribute("y2", GROUND + 6);
     t.setAttribute("stroke", "var(--line)");
-    t.setAttribute("stroke-width", "1");
+    t.setAttribute("stroke-width", "1.5");
     ticks.appendChild(t);
     if (u % 2 === 0) {
       var n = document.createElementNS(ns, "text");
