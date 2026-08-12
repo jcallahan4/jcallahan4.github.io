@@ -16,6 +16,7 @@
     --text: #e8e6e1;
     --text-dim: #8a8f96;
     --accent: #ffb000;
+    --signal: #3ddc84;
     --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   html, body {
@@ -45,7 +46,7 @@
     letter-spacing: 0.08em;
   }
   .readout {
-    fill: var(--text);
+    fill: var(--signal);
     font-size: 26px;
     letter-spacing: 0.04em;
   }
@@ -68,14 +69,21 @@
   }
   .btn:hover rect { stroke: var(--text-dim); }
   .btn:hover text { fill: var(--text); }
-  .btn.primary rect { stroke: var(--accent); }
-  .btn.primary text { fill: var(--accent); }
-  .btn.primary:hover rect { fill: var(--accent); }
+  .btn.primary rect { stroke: var(--signal); }
+  .btn.primary text { fill: var(--signal); }
+  .btn.primary:hover rect { fill: var(--signal); }
   .btn.primary:hover text { fill: var(--bg); }
+  .bar {
+    fill: var(--signal);
+    fill-opacity: 0.22;
+    stroke: var(--signal);
+    stroke-opacity: 0.8;
+    stroke-width: 1;
+  }
 </style>
 </head>
 <body>
-<svg id="scene" viewBox="0 0 960 280" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: click Measure to draw a noisy reading from the sensor; readings accumulate as a dot plot on a number line, clustering around the model prediction.">
+<svg id="scene" viewBox="0 0 960 280" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: click Measure to draw a noisy reading from the sensor; each reading lands on a number line and fills its histogram bin, building a normal distribution around the model prediction.">
 
   <!-- control buttons -->
   <g id="btn-measure" class="btn primary">
@@ -108,7 +116,8 @@
   <!-- panel divider -->
   <line x1="302" y1="20" x2="302" y2="260" stroke="var(--line-faint)" stroke-width="1"/>
 
-  <!-- right panel: number line -->
+  <!-- right panel: histogram bars, then number line on top -->
+  <g id="bars"></g>
   <line x1="330" y1="230" x2="920" y2="230" stroke="var(--line)" stroke-width="1"/>
   <g id="nl-ticks"></g>
 
@@ -119,9 +128,7 @@
   <!-- dot count -->
   <text class="label" id="count-label" x="920" y="30" text-anchor="end">N = 0</text>
 
-  <!-- landed dots -->
-  <g id="dots"></g>
-  <!-- flying dots -->
+  <!-- flying / fading dots -->
   <g id="flying"></g>
 </svg>
 
@@ -134,13 +141,15 @@
   // --- model -----------------------------------------------------------
   var MU = 0.250;       // model prediction g(theta)
   var SIGMA = 0.02;     // noise standard deviation
-  var BIN = 0.01;       // dot-plot quantization
+  var BIN = 0.01;       // histogram bin width
 
   // --- layout ------------------------------------------------------------
   var SENSOR_X = 210, GROUND = 230;
   var NL0 = 330, NL1 = 920;         // number line pixel extent
   var V0 = 0.15, V1 = 0.35;         // number line value extent
-  var DOT_R = 5, DOT_STEP = 12;
+  var DOT_R = 5;
+  var BIN_PX = BIN / (V1 - V0) * (NL1 - NL0);
+  var MAX_BAR = GROUND - 84;        // tallest bar the panel allows
 
   function valToPx(v) { return NL0 + (v - V0) / (V1 - V0) * (NL1 - NL0); }
 
@@ -178,35 +187,44 @@
 
   // --- state ---------------------------------------------------------------
   var readout = document.getElementById("readout-value");
-  var dotsGroup = document.getElementById("dots");
+  var barsGroup = document.getElementById("bars");
   var flyingGroup = document.getElementById("flying");
   var countLabel = document.getElementById("count-label");
-  var bins = {};        // bin index -> landed dot elements, in stack order
-  var pendingBin = {};  // bin index -> dots in flight (reserve stack slots)
+
+  var counts = {};    // bin index -> landed count
+  var barEl = {};     // bin index -> rect element
+  var barH = {};      // bin index -> current animated height
+  var barT = {};      // bin index -> target height
   var landed = 0;
+  var seqIdx = 0;
 
-  // tallest stack, counting dots still in flight
-  function maxStack() {
-    var m = 0, k;
-    for (k in bins) m = Math.max(m, bins[k].length + (pendingBin[k] || 0));
-    for (k in pendingBin) m = Math.max(m, (bins[k] ? bins[k].length : 0) + pendingBin[k]);
-    return m;
+  function ensureBar(bin) {
+    if (barEl[bin]) return;
+    var cx = valToPx(MU + bin * BIN);
+    var r = document.createElementNS(ns, "rect");
+    r.setAttribute("class", "bar");
+    r.setAttribute("x", cx - BIN_PX / 2 + 1);
+    r.setAttribute("width", BIN_PX - 2);
+    r.setAttribute("y", GROUND);
+    r.setAttribute("height", 0);
+    barsGroup.appendChild(r);
+    barEl[bin] = r;
+    barH[bin] = 0;
+    barT[bin] = 0;
   }
 
-  // compress stacks so the tallest always fits in the panel
-  function layout() {
-    var m = maxStack();
-    var step = Math.min(DOT_STEP, m > 0 ? (GROUND - 78) / m : DOT_STEP);
-    var r = Math.min(DOT_R, Math.max(2.5, step * 0.45 + 1));
-    for (var k in bins) {
-      bins[k].forEach(function (el, idx) {
-        el.setAttribute("cy", GROUND - 4 - r - idx * step);
-        el.setAttribute("r", r);
-      });
+  // recompute every bar's target height; scale so the tallest always fits
+  function retarget() {
+    var maxC = 0, k;
+    for (k in counts) maxC = Math.max(maxC, counts[k]);
+    var unit = Math.min(16, maxC > 0 ? MAX_BAR / maxC : 16);
+    for (k in counts) {
+      ensureBar(k);
+      barT[k] = counts[k] * unit;
     }
-    return { step: step, r: r };
   }
 
+  // --- randomness ------------------------------------------------------------
   function gauss() {
     var u1 = Math.random() || 1e-9, u2 = Math.random();
     return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
@@ -250,10 +268,9 @@
             ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
   }
 
-  var seqIdx = 0;
-
-  // --- flying dot animation ---------------------------------------------------
+  // --- measurement flights ------------------------------------------------------
   var flights = [];
+  var fades = [];
 
   function measure() {
     seqIdx++;
@@ -261,39 +278,25 @@
     v = Math.max(V0 + 0.003, Math.min(V1 - 0.003, v));
     readout.textContent = v.toFixed(3);
 
-    var bin = Math.round((v - MU) / BIN);
-    var slot = (bins[bin] ? bins[bin].length : 0) + (pendingBin[bin] || 0);
-    pendingBin[bin] = (pendingBin[bin] || 0) + 1;
-
-    var L = layout();  // pre-compress existing stacks for the incoming dot
-    var tx = valToPx(v);                          // true position on the line
-    var ty = GROUND - 4 - L.r - slot * L.step;    // stack height from its bucket
-
     var dot = document.createElementNS(ns, "circle");
-    dot.setAttribute("r", L.r);
-    dot.setAttribute("fill", "var(--accent)");
+    dot.setAttribute("r", DOT_R);
+    dot.setAttribute("fill", "var(--signal)");
     flyingGroup.appendChild(dot);
 
     flights.push({
       el: dot, t: 0, dur: 650,
-      x0: SENSOR_X, y0: 55,       // leave from the signal box
-      x1: tx, y1: ty, bin: bin
+      x0: SENSOR_X, y0: 55,                     // leave from the signal box
+      x1: valToPx(v), y1: GROUND - DOT_R,       // land on the number line
+      bin: Math.round((v - MU) / BIN)
     });
   }
 
   function land(f) {
-    f.el.remove();
-    var dot = document.createElementNS(ns, "circle");
-    dot.setAttribute("cx", f.x1); dot.setAttribute("cy", f.y1);
-    dot.setAttribute("fill", "var(--accent)");
-    dot.setAttribute("opacity", "0.9");
-    dotsGroup.appendChild(dot);
-    if (!bins[f.bin]) bins[f.bin] = [];
-    bins[f.bin].push(dot);
-    pendingBin[f.bin]--;
+    counts[f.bin] = (counts[f.bin] || 0) + 1;
+    retarget();
     landed++;
     countLabel.textContent = "N = " + landed;
-    layout();
+    fades.push({ el: f.el, t: 0, dur: 450 });   // dot dissolves into the bar
   }
 
   function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
@@ -304,20 +307,44 @@
     var dt = ts - last;
     last = ts;
 
+    // flying dots
     for (var i = flights.length - 1; i >= 0; i--) {
       var f = flights[i];
       f.t += dt;
       var p = Math.min(1, f.t / f.dur);
       var e = easeInOut(p);
-      var x = f.x0 + (f.x1 - f.x0) * e;
-      var y = f.y0 + (f.y1 - f.y0) * e - 60 * Math.sin(Math.PI * p); // slight arc
-      f.el.setAttribute("cx", x);
-      f.el.setAttribute("cy", y);
+      f.el.setAttribute("cx", f.x0 + (f.x1 - f.x0) * e);
+      f.el.setAttribute("cy", f.y0 + (f.y1 - f.y0) * e - 60 * Math.sin(Math.PI * p));
       if (p >= 1) {
         land(f);
         flights.splice(i, 1);
       }
     }
+
+    // landed dots fading into their bar
+    for (var j = fades.length - 1; j >= 0; j--) {
+      var fd = fades[j];
+      fd.t += dt;
+      var q = Math.min(1, fd.t / fd.dur);
+      fd.el.setAttribute("opacity", (1 - q).toFixed(3));
+      if (q >= 1) {
+        fd.el.remove();
+        fades.splice(j, 1);
+      }
+    }
+
+    // bars easing toward their targets
+    var k = 1 - Math.exp(-dt / 120);
+    for (var bin in barT) {
+      var cur = barH[bin], tgt = barT[bin];
+      if (cur === tgt) continue;
+      cur += (tgt - cur) * k;
+      if (Math.abs(tgt - cur) < 0.15) cur = tgt;
+      barH[bin] = cur;
+      barEl[bin].setAttribute("y", GROUND - cur);
+      barEl[bin].setAttribute("height", cur);
+    }
+
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -337,9 +364,11 @@
 
   document.getElementById("btn-reset").addEventListener("click", function () {
     flights.forEach(function (f) { f.el.remove(); });
-    flights = [];
-    while (dotsGroup.firstChild) dotsGroup.firstChild.remove();
-    bins = {}; pendingBin = {}; landed = 0; seqIdx = 0;
+    fades.forEach(function (f) { f.el.remove(); });
+    flights = []; fades = [];
+    while (barsGroup.firstChild) barsGroup.firstChild.remove();
+    counts = {}; barEl = {}; barH = {}; barT = {};
+    landed = 0; seqIdx = 0;
     countLabel.textContent = "N = 0";
     readout.textContent = "— — —";
   });
