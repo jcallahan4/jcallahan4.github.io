@@ -77,39 +77,32 @@
 </style>
 </head>
 <body>
-<svg id="scene" viewBox="0 0 880 400" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: a belief curve over source location. Ratio mode compares plausibility at two points, area mode shows probability over a region, sample mode draws plausible source locations that rebuild the curve as a histogram.">
+<svg id="scene" viewBox="0 0 880 400" preserveAspectRatio="xMidYMid meet" aria-label="Interactive diagram: a belief curve over source location. Ratio mode compares plausibility at two points, sample mode draws plausible source locations that rebuild the curve as a histogram.">
 
   <!-- mode buttons -->
   <g id="mode-ratio" class="btn">
     <rect x="20" y="14" width="76" height="28"/>
     <text x="58" y="32" text-anchor="middle">RATIO</text>
   </g>
-  <g id="mode-area" class="btn">
-    <rect x="104" y="14" width="70" height="28"/>
-    <text x="139" y="32" text-anchor="middle">AREA</text>
-  </g>
   <g id="mode-sample" class="btn">
-    <rect x="182" y="14" width="84" height="28"/>
-    <text x="224" y="32" text-anchor="middle">SAMPLE</text>
+    <rect x="104" y="14" width="84" height="28"/>
+    <text x="146" y="32" text-anchor="middle">SAMPLE</text>
   </g>
   <g id="btn-batch" class="btn">
-    <rect x="274" y="14" width="60" height="28"/>
-    <text x="304" y="32" text-anchor="middle">&#215;100</text>
+    <rect x="196" y="14" width="60" height="28"/>
+    <text x="226" y="32" text-anchor="middle">&#215;100</text>
   </g>
   <g id="btn-reset" class="btn">
-    <rect x="342" y="14" width="72" height="28"/>
-    <text x="378" y="32" text-anchor="middle">RESET</text>
+    <rect x="264" y="14" width="72" height="28"/>
+    <text x="300" y="32" text-anchor="middle">RESET</text>
   </g>
-  <text class="label" id="count-label" x="436" y="32" visibility="hidden">N = 0</text>
-  <text class="label" id="theta-label" x="516" y="32" visibility="hidden">&#952; = &#8212;</text>
+  <text class="label" id="count-label" x="358" y="32" visibility="hidden">N = 0</text>
+  <text class="label" id="theta-label" x="438" y="32" visibility="hidden">&#952; = &#8212;</text>
 
   <text class="label" x="840" y="32" text-anchor="end">BELIEF &#183; p(&#952;)</text>
 
   <!-- histogram bars (sample mode) -->
   <g id="bars"></g>
-
-  <!-- area shading (area mode) -->
-  <path id="area-fill" fill="var(--accent)" fill-opacity="0.28" visibility="hidden"/>
 
   <!-- belief curve -->
   <path id="curve-fill" fill="var(--accent)" fill-opacity="0.10"/>
@@ -132,13 +125,6 @@
       <text class="density-val" y="-14" text-anchor="middle">0.000</text>
     </g>
     <text class="big-val" id="ratio-label" y="84" text-anchor="middle">&#8212;</text>
-  </g>
-
-  <!-- area mode overlay -->
-  <g id="g-area" visibility="hidden">
-    <path id="handle-a" fill="var(--accent)" style="cursor: ew-resize"/>
-    <path id="handle-b" fill="var(--accent)" style="cursor: ew-resize"/>
-    <text class="big-val" id="area-label" y="84" text-anchor="middle">&#8212;</text>
   </g>
 
   <!-- falling sample dots -->
@@ -234,20 +220,17 @@
   }
 
   // --- mode switching --------------------------------------------------------------
-  var mode = null;   // null | 'ratio' | 'area' | 'sample'
+  var mode = null;   // null | 'ratio' | 'sample'
   var groups = {
-    ratio: document.getElementById("g-ratio"),
-    area: document.getElementById("g-area")
+    ratio: document.getElementById("g-ratio")
   };
   var modeBtns = {
     ratio: document.getElementById("mode-ratio"),
-    area: document.getElementById("mode-area"),
     sample: document.getElementById("mode-sample")
   };
   var countLabel = document.getElementById("count-label");
   var thetaLabel = document.getElementById("theta-label");
   var barsGroup = document.getElementById("bars");
-  var areaFill = document.getElementById("area-fill");
 
   function setMode(m) {
     mode = (mode === m) ? null : m;
@@ -255,20 +238,14 @@
       modeBtns[k].setAttribute("class", "btn" + (mode === k ? " active" : ""));
     }
     groups.ratio.setAttribute("visibility", mode === "ratio" ? "visible" : "hidden");
-    groups.area.setAttribute("visibility", mode === "area" ? "visible" : "hidden");
-    areaFill.setAttribute("visibility", mode === "area" ? "visible" : "hidden");
     barsGroup.setAttribute("visibility", mode === "sample" ? "visible" : "hidden");
     var sVis = mode === "sample" ? "visible" : "hidden";
     countLabel.setAttribute("visibility", sVis);
     thetaLabel.setAttribute("visibility", sVis);
   }
   modeBtns.ratio.addEventListener("click", function () { setMode("ratio"); });
-  modeBtns.area.addEventListener("click", function () { setMode("area"); });
-  // SAMPLE: first click enters sample mode, further clicks each draw a sample
-  modeBtns.sample.addEventListener("click", function () {
-    if (mode !== "sample") setMode("sample");
-    else sample();
-  });
+  // SAMPLE: every click draws a sample (entering sample mode if needed)
+  modeBtns.sample.addEventListener("click", function () { sample(); });
 
   // --- RATIO mode -------------------------------------------------------------------
   var cur = { a: 3.6, b: 5.4 };
@@ -295,36 +272,7 @@
   }
   renderRatio();
 
-  // --- AREA mode ----------------------------------------------------------------------
-  var bnd = { a: 2.0, b: 4.6 };
-  var handleEls = {
-    a: document.getElementById("handle-a"),
-    b: document.getElementById("handle-b")
-  };
-  var areaLabel = document.getElementById("area-label");
-
-  function renderArea() {
-    var xa = tToPx(bnd.a), xb = tToPx(bnd.b);
-    ["a", "b"].forEach(function (k) {
-      var x = tToPx(bnd[k]);
-      handleEls[k].setAttribute("d",
-        "M " + (x - 8) + " " + (GROUND + 16) + " L " + (x + 8) + " " + (GROUND + 16) +
-        " L " + x + " " + (GROUND + 2) + " Z");
-    });
-    var d = "M " + xa + " " + GROUND;
-    for (var i = 0; i <= 100; i++) {
-      var t = bnd.a + i / 100 * (bnd.b - bnd.a);
-      d += " L " + tToPx(t).toFixed(1) + " " + yCurve(t).toFixed(1);
-    }
-    d += " L " + xb + " " + GROUND + " Z";
-    areaFill.setAttribute("d", d);
-    var p = cdf(bnd.b) - cdf(bnd.a);
-    areaLabel.textContent = "P( " + bnd.a.toFixed(1) + " ≤ θ ≤ " + bnd.b.toFixed(1) + " ) = " + p.toFixed(2);
-    areaLabel.setAttribute("x", (xa + xb) / 2);
-  }
-  renderArea();
-
-  // --- dragging (ratio cursors, area handles) --------------------------------------------
+  // --- dragging (ratio cursors) --------------------------------------------
   var dragKey = null;
   function eventT(evt) {
     var pt = svg.createSVGPoint();
@@ -332,25 +280,21 @@
     return pxToT(pt.matrixTransform(svg.getScreenCTM().inverse()).x);
   }
   svg.addEventListener("pointerdown", function (evt) {
-    if (mode !== "ratio" && mode !== "area") return;
+    if (mode !== "ratio") return;
+    // presses on the buttons must never start a cursor drag: the pointer
+    // capture would swallow the button's click event
+    if (evt.target.closest && evt.target.closest(".btn")) return;
     var t = eventT(evt);
-    var o = mode === "ratio" ? cur : bnd;
-    dragKey = Math.abs(t - o.a) <= Math.abs(t - o.b) ? "a" : "b";
-    if (Math.abs(t - o[dragKey]) > 1.2) { dragKey = null; return; }
+    dragKey = Math.abs(t - cur.a) <= Math.abs(t - cur.b) ? "a" : "b";
+    if (Math.abs(t - cur[dragKey]) > 1.2) { dragKey = null; return; }
     svg.setPointerCapture(evt.pointerId);
     evt.preventDefault();
   });
   svg.addEventListener("pointermove", function (evt) {
     if (!dragKey) return;
     var t = Math.max(T0 + 0.15, Math.min(T1 - 0.15, eventT(evt)));
-    if (mode === "ratio") {
-      cur[dragKey] = t;
-      renderRatio();
-    } else if (mode === "area") {
-      if (dragKey === "a") bnd.a = Math.min(t, bnd.b - 0.2);
-      else bnd.b = Math.max(t, bnd.a + 0.2);
-      renderArea();
-    }
+    cur[dragKey] = t;
+    renderRatio();
   });
   function endDrag() { dragKey = null; }
   svg.addEventListener("pointerup", endDrag);
@@ -461,7 +405,6 @@
 
   // hash hooks: pre-select a mode, or auto-sample a batch with #demo
   if (location.hash === "#ratio") setMode("ratio");
-  if (location.hash === "#area") setMode("area");
   if (location.hash === "#demo") {
     setMode("sample");
     for (var k = 0; k < 100; k++) setTimeout(sample, k * 16);
