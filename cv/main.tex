@@ -1,0 +1,419 @@
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+%	The MIT License (MIT)
+%
+%	Copyright (c) 2021 Jitin Nair
+%
+%	Permission is hereby granted, free of charge, to any person obtaining a copy
+%	of this software and associated documentation files (the "Software"), to deal
+%	in the Software without restriction, including without limitation the rights
+%	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%	copies of the Software, and to permit persons to whom the Software is
+%	furnished to do so, subject to the following conditions:
+%	
+%	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%	THE SOFTWARE.
+%	
+%
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT DEFINITION
+%----------------------------------------------------------------------------------------
+
+% article class because we want to fully customize the page and not use a cv template
+\documentclass[a4paper,12pt]{article}
+
+%----------------------------------------------------------------------------------------
+%	FONT
+%----------------------------------------------------------------------------------------
+
+% % fontspec allows you to use TTF/OTF fonts directly
+% \usepackage{fontspec}
+% \defaultfontfeatures{Ligatures=TeX}
+
+% % modified for ShareLaTeX use
+% \setmainfont[
+% SmallCapsFont = Fontin-SmallCaps.otf,
+% BoldFont = Fontin-Bold.otf,
+% ItalicFont = Fontin-Italic.otf
+% ]
+% {Fontin.otf}
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES
+%----------------------------------------------------------------------------------------
+\usepackage{url}
+\usepackage{parskip} 	
+
+%other packages for formatting
+\RequirePackage{color}
+\RequirePackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[scale=0.8]{geometry}
+
+%tabularx environment
+\usepackage{tabularx}
+
+%for lists within experience section
+\usepackage{enumitem}
+
+% centered version of 'X' col. type
+\newcolumntype{C}{>{\centering\arraybackslash}X} 
+
+%to prevent spillover of tabular into next pages
+\usepackage{supertabular}
+\usepackage{tabularx}
+\newlength{\fullcollw}
+\setlength{\fullcollw}{0.47\textwidth}
+
+%custom \section
+\usepackage{titlesec}				
+\usepackage{multicol}
+\usepackage{multirow}
+
+%CV Sections inspired by: 
+%http://stefano.italians.nl/archives/26
+
+\definecolor{headercolor}{RGB}{12,35,75}
+\titleformat{\section}{\large\scshape\raggedright\color{Blue}}{}{0em}{}[{\titlerule[.1pt]}]
+\titlespacing{\section}{0pt}{10pt}{10pt}
+
+\titleformat{\subsection}
+{\normalsize\scshape\raggedright\color{Blue}}{}{0em}{}
+% {\normalsize\scshape\raggedright\color{blakc}}{}{0em}{}
+\titlespacing{\subsection}{0pt}{8pt}{6pt}
+
+%for publications
+% \usepackage[
+%   style=nature,
+%   url=false,
+%   doi=true,
+%   eprint=false,
+%   maxbibnames=99,
+%   sorting=ydnt,
+%   dashed=false,
+%   defernumbers=true,
+%   backend=biber
+% ]{biblatex}
+% Hack up SIAM bib style
+\usepackage[
+  style=numeric-comp,
+  sorting=ydnt,
+  doi=true,
+  url=true,
+  backend=biber,
+  maxbibnames=99,
+  isbn=false,
+  defernumbers=true,
+]{biblatex}
+
+\addbibresource[label=pubs]{pubs.bib}
+\addbibresource[label=pres]{pres.bib}
+
+% --- siam look-alike tweaks ---
+
+% small caps authors
+\DeclareNameAlias{default}{family-given}
+
+\DeclareNameFormat{author}{%
+  \nameparts{#1}% split the name
+  % given name initials
+  \ifblank{\namepartgiven}{}{%
+    \textsc{\namepartgiveni}%
+    \addperiod\addspace
+  }%
+  % family name small caps
+  \textsc{\namepartfamily}%
+  % separator logic: comma between, 'and' before last
+  \ifthenelse{\value{listcount}<\numexpr\value{liststop}-1\relax}%
+    {\addcomma\space}% between early names
+    {\ifthenelse{\value{listcount}=\numexpr\value{liststop}-1\relax}%
+      {\addcomma\space \textsc{and}\space}% before final author
+      {}%
+    }%
+  \usebibmacro{name:andothers}}
+
+% italic titles
+\DeclareFieldFormat[article,inproceedings,unpublished]{title}{\mkbibemph{#1}}
+
+% journal titles upright (no italics)
+\DeclareFieldFormat[article]{journaltitle}{#1}
+
+% issue & year in parentheses (like SIAM)
+\renewbibmacro*{volume+number+eid}{%
+  \printfield{volume}%
+  \iffieldundef{number}
+    {}
+    {\addnbspace\mkbibparens{\printfield{number}}}%
+  \iffieldundef{eid}
+    {}
+    {\addcomma\space\printfield{eid}}}
+
+% doi on its own line
+% redefine how the doi field itself is formatted (no "doi:" prefix)
+% completely override how DOIs are printed
+\DeclareFieldFormat{doi}{#1}
+
+\renewbibmacro*{doi+eprint+url}{%
+  \iffieldundef{doi}
+    {\iffieldundef{url}
+       {}
+       {\addcomma\space\url{\thefield{url}}}} % Print URL if DOI is missing
+    {\addcomma\space\url{https://doi.org/\thefield{doi}}} % Print DOI if available
+}
+
+
+\renewbibmacro{in:}{}
+\renewcommand*{\newunitpunct}{\addcomma\space}
+
+% spacing + punctuation
+\setlength\bibitemsep{0.5em}
+\renewcommand*{\bibfont}{\small}
+
+
+\AtDataInput{%
+  \csnumgdef{entrycount:\therefsection}{%
+    \csuse{entrycount:\therefsection}+1}}
+
+
+\newcommand{\bibprefix}{}
+\newcommand{\setbibprefix}[1]{\renewcommand{\bibprefix}{#1}}
+
+\DeclareFieldFormat{labelnumber}{\mkbibdesc{#1}}    
+\newrobustcmd*{\mkbibdesc}[1]{%
+  \bibprefix\number\numexpr\csuse{entrycount:\therefsection}+1-#1\relax}
+
+% \newrobustcmd*{\mkbibdesc}[1]{%
+%   \bibprefix\number\numexpr\csuse{entrycount:\therefsection}+1-#1\relax}
+
+
+%Setup hyperref package, and colours for links
+\usepackage[unicode, draft=false]{hyperref}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{colorlinks,breaklinks,urlcolor=black,linkcolor=linkcolour}
+
+\setlength\bibitemsep{1em}
+
+%for social icons
+\usepackage{fontawesome5}
+
+%debug page outer frames
+%\usepackage{showframe}
+
+
+% job listing environments
+\newenvironment{jobshort}[2]
+    {
+    \begin{tabularx}{\linewidth}{@{}l X r@{}}
+    \textbf{#1} & \hfill &  #2 \\[3.75pt]
+    \end{tabularx}
+    }
+    {
+    }
+
+\newenvironment{joblong}[2]
+    {
+    \begin{tabularx}{\linewidth}{@{}l X r@{}}
+    \textbf{#1} & \hfill &  #2 \\[3.75pt]
+    \end{tabularx}
+    \begin{minipage}[t]{\linewidth}
+    \begin{itemize}[nosep,after=\strut, leftmargin=1em, itemsep=3pt,label=--]
+    }
+    {
+    \end{itemize}
+    \end{minipage}    
+    }
+
+
+
+%----------------------------------------------------------------------------------------
+%	BEGIN DOCUMENT
+%----------------------------------------------------------------------------------------
+\begin{document}
+
+% non-numbered pages
+\pagestyle{empty} 
+
+%----------------------------------------------------------------------------------------
+%	TITLE
+%----------------------------------------------------------------------------------------
+
+% \begin{tabularx}{\linewidth}{ @{}X X@{} }
+% \huge{Your Name}\vspace{2pt} & \hfill \emoji{incoming-envelope} email@email.com \\
+% \raisebox{-0.05\height}\faGithub\ username \ | \
+% \raisebox{-0.00\height}\faLinkedin\ username \ | \ \raisebox{-0.05\height}\faGlobe \ mysite.com  & \hfill \emoji{calling} number
+% \end{tabularx}
+\begin{tabularx}{\linewidth}{@{} C @{}}
+\Large{\scshape Curriculum Vitae: Jake Callahan}\\[7.5pt]
+PhD Candidate, Program in Applied Mathematics, The University of Arizona\\[7.5pt]
+\href{mailto:jakecallahan@arizona.edu}{\raisebox{-0.05\height}\faEnvelope \ jakecallahan@arizona.edu} \ $|$ \
+\href{https://jake-callahan.com}{\raisebox{-0.05\height}\faGlobe \ jake-callahan.com} \ $|$ \ 
+\href{https://github.com/jcallahan4}{\raisebox{-0.05\height}\faGithub\ jcallahan4} \ $|$ \ 
+\href{https://linkedin.com/in/jake-callahan}{\raisebox{-0.05\height}\faLinkedin\ jake-callahan} 
+% \ $|$ \ 
+% \href{tel:+000000000000}{\raisebox{-0.05\height}\faMobile \ +00.00.000.000} \\
+\end{tabularx}
+\\[10pt]
+
+%----------------------------------------------------------------------------------------
+% EXPERIENCE SECTIONS
+%----------------------------------------------------------------------------------------
+\section{Education}
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Doctor of Philosophy, Applied Mathematics} & 2023--present \\
+\end{tabularx}
+\href{https://appliedmath.arizona.edu}{Program in Applied Mathematics,} \href{https://arizona.edu}{The University of Arizona} \\
+% \textit{Your dissertation title here} \\
+Committee: \href{https://scholar.google.com/citations?user=71ZEsnEAAAAJ&hl=en}{Jason Pacheco (Chair)}, 
+\href{https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en}{Tommie Catanach},
+\href{https://scholar.google.com/citations?user=29B3BAgAAAAJ&hl=en}{Chicheng Zhang},
+\href{https://scholar.google.com/citations?user=tTej1tUAAAAJ&hl=en}{Joseph Watkins}
+%, Member 2, Member 3, Member 4
+
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Master of Science, Mathematics} & 2023 \\
+\end{tabularx}
+\href{https://math.byu.edu}{Department of Mathematics,} \href{https://byu.edu}{Brigham Young University}\\
+\textit{\href{https://scholarsarchive.byu.edu/etd/9950/}{Hamiltonian Monte Carlo for Reconstructing Historical Earthquake-induced Tsunamis}} \\
+Committee: \href{https://scholar.google.com/citations?user=lLR_YEYAAAAJ&hl=en}{Jared Whitehead (Chair)}, \href{https://scholar.google.com/citations?user=jbGAxasAAAAJ&hl=en}{Tyler Jarvis}, \href{https://scholar.google.com/citations?user=cTP2k9kAAAAJ&hl=en}{Mark Kempton}
+
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Bachelor of Science, Mathematics \href{https://acme.byu.edu}{(Applied and Computational Emphasis)}} & 2020 \\
+\end{tabularx}
+\href{https://math.byu.edu}{Department of Mathematics,} \href{https://byu.edu}{Brigham Young University}
+
+
+\section{Publications}
+
+\begin{refsection}[pubs.bib]
+\nocite{*}
+
+\subsection*{Conference Publications}
+% \setbibprefix{C}
+\printbibliography[heading=none,keyword=conference]
+
+\subsection*{Journal Publications}
+% \setbibprefix{J}
+\printbibliography[heading=none,keyword=journal]
+
+\subsection*{In Review}
+\setbibprefix{}
+\printbibliography[heading=none,keyword=review]
+
+\subsection*{In Preparation}
+\printbibliography[heading=none,keyword=preparation]
+
+\subsection*{Software}
+\printbibliography[heading=none,keyword=software]
+
+
+\subsection*{Technical Reports}
+\printbibliography[heading=none,keyword=proceedings]
+
+\subsection*{Other Publications}
+\printbibliography[heading=none,keyword=other]
+\end{refsection}
+
+
+\begin{refsection}[pres]
+\nocite{*}
+\section*{Presentations}
+\subsection*{Conference Presentations}
+\printbibliography[heading=none,keyword=conferencepres]
+
+\subsection*{Seminars and Invited Talks}
+\printbibliography[heading=none,keyword=seminar]
+
+\subsection*{Poster Presentations}
+\printbibliography[heading=none,keyword=posterpres]
+\end{refsection}
+
+% \section*{Awards \& Honors}
+% \begin{itemize}[leftmargin=1.25em, itemsep=0.25em]
+%   \item \textbf{Herbert E.\ Carter Travel Award}, Graduate Interdisciplinary Programs, University of Arizona (\$600), 2026.
+%   \item \textbf{Brigham Young University Half-Tuition Scholarship}, 2016.
+% \end{itemize}
+
+\section*{Awards and Honors}
+
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr}
+ \textbf{Herbert E.\ Carter Travel Award} & 2026 \\
+\end{tabular*}
+Graduate Interdisciplinary Programs, University of Arizona \\[8pt]
+
+
+%Experience
+\section*{Teaching}
+
+\subsection*{Instructor}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr}
+ \textbullet\ Math 107: Exploring and Understanding Data & University of Arizona, Fall 2025 \\
+ \textbullet\ Math 112: College Algebra & University of Arizona, Fall 2024\\
+ \textbullet\ Math 102: Quantitative Reasoning & Brigham Young University, Spring 2022
+\end{tabular*}
+
+\subsection*{Graduate Teaching Assistant}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr}
+ \textbullet\ Math 466: Theory of Statistics & University of Arizona, Fall 2025 \\
+ \textbullet\ Math 584: Intro to Real Analysis  & University of Arizona, Fall 2024--Spring 2025 \\
+ \textbullet\ Math 112: College Algebra & University of Arizona, Fall 2023--Spring 2024 \\
+ \textbullet\ Math 342: Theory of Analysis 2 & Brigham Young University, Fall 2021--Spring 2023 \\
+ \textbullet\ Math 112: Calculus 2 & Brigham Young University, Fall 2021 \\
+\end{tabular*}
+
+\section*{Professional Service}
+
+\subsection*{Departmental and University Service}
+\enlargethispage{3\baselineskip}
+
+
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Student Ambassador}, NSF Innovations in Graduate Education (IGE) & 2025 -- 2026 \\
+\end{tabularx}
+\begin{itemize}[nosep, leftmargin=1em, itemsep=3pt, label=--]
+    \item Facilitated partnerships between the University of Arizona Program in Applied Mathematics and Sandia National Laboratories to promote non-traditional research careers in National and Industrial Labs.
+\end{itemize}
+
+\vspace{2pt}
+
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Organizer and Instructor}, U of A Applied Math Programming Workshop & 2024 \\
+\end{tabularx}
+\begin{itemize}[nosep, leftmargin=1em, itemsep=3pt, label=--]
+    \item Designed and led a week-long workshop to teach 20+ incoming PhD students Python and scientific computing best practices.
+\end{itemize}
+
+\subsection*{Professional and Technical Service}
+
+% \begin{minipage}{\linewidth}
+% \begin{tabularx}{\linewidth}{@{}X r@{}}
+% \textbf{Journal Referee} & 2025 -- Present
+% \end{tabularx}
+% \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l}
+%  \textbullet\ Seismological Research Letters \\
+%  \textbullet\ Geophysical Journal International \\
+%  \textbullet\ Neural Information Processing Systems \\
+% \end{tabular*}
+% \end{minipage}
+
+\begin{tabularx}{\linewidth}{@{}X r@{}}
+\textbf{Journal Referee} & 2025--Present \\[2pt]
+\textbullet\ Seismological Research Letters & \\
+\textbullet\ Geophysical Journal International & \\
+\textbullet\ Neural Information Processing Systems & \\[6pt]
+
+\textbf{Mini-symposium Organizer}, SIAM Northern States Sectional & 2023 \\[2pt]
+\textbullet\ \textit{Is Quantifiable Uncertainty Achievable? A (mostly) Bayesian Perspective.} Logan, UT. &
+\end{tabularx}
+
+
+
+% \section{Mentorship}
+
+%\section{Awards and Honors}
+\end{document}
