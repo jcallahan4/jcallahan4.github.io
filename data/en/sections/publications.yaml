@@ -200,12 +200,16 @@ publications:
 
   - title: Distributional Bayesian Optimal Experimental Design
     publishedIn:
-      name: In preparation.
+      name: Under review.
       # date: 17 January 2025
       # url: https://academic.oup.com/gji
     authors:
       - name: Jake Callahan
         url: https://scholar.google.com/citations?hl=en&user=ZavkO_UAAAAJ
+      - name: Tommie Catanach
+        url: https://scholar.google.com/citations?user=HfMJR_AAAAAJ&hl=en
+      - name: Jason Pacheco
+        url: https://scholar.google.com/citations?user=71ZEsnEAAAAJ&hl=en
     paper:
       summary: Sequential Bayesian optimal experimental design (BOED) chooses informative experiments adaptively based on the outcomes of prior experiments. 
                The standard sequential BOED objective, expected information gain (EIG), scores an experimental design policy by the mean of its information gain (IG) distribution. 
