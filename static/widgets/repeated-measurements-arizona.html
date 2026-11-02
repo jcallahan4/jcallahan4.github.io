@@ -88,6 +88,8 @@
   var sigma = 0.006, binWidth = 0.002;
   var minimum = 0.01, maximum = 0.07;
   var left = 338, right = 898, ground = 270, plotHeight = 204, yMax = 10;
+  // Sensor head center in SVG coordinates: (190, 210) + (0, -58).
+  var sensorHeadX = 190, sensorHeadY = 152;
   var counts = new Map(), barNodes = new Map(), flights = [];
   var total = 0, drawn = 0, cycle = 0;
   var time = 0, nextDraw = 1800, lastFrame = null, lastMeasurement = -Infinity;
@@ -176,7 +178,7 @@
       axes(); render();
     }
     readout.textContent = value.toFixed(3); readout.dataset.value = value;
-    var dot = element("circle", { cx: 185, cy: 119, r: 5 }, document.getElementById("flights"));
+    var dot = element("circle", { cx: sensorHeadX, cy: sensorHeadY, r: 5 }, document.getElementById("flights"));
     flights.push({ value: value, born: time, dot: dot });
     drawn++; lastMeasurement = time;
   }
@@ -215,10 +217,10 @@
       var landed = false;
       flights = flights.filter(function (flight) {
         var progress = Math.min(1, (time - flight.born) / 650);
-        // Smooth transfer from the sensor reading to its histogram position: s(t) = 3t²-2t³.
+        // Smooth transfer from the sensor head to its histogram position: s(t) = 3t²-2t³.
         var s = progress * progress * (3 - 2 * progress);
-        flight.dot.setAttribute("cx", 185 + (x(flight.value) - 185) * s);
-        flight.dot.setAttribute("cy", 119 + (ground - 119) * s);
+        flight.dot.setAttribute("cx", sensorHeadX + (x(flight.value) - sensorHeadX) * s);
+        flight.dot.setAttribute("cy", sensorHeadY + (ground - sensorHeadY) * s);
         if (progress < 1) return true;
         land(flight.value); landed = true; flight.dot.remove(); return false;
       });
