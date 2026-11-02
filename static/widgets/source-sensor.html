@@ -8,6 +8,11 @@
      Harmless in a normal browser; the page does not depend on it. -->
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<script>
+  if (new URLSearchParams(window.location.search).get("theme") === "arizona") {
+    document.documentElement.dataset.theme = "arizona";
+  }
+</script>
 <style>
   :root {
     --bg: #ffffff;
@@ -17,7 +22,19 @@
     --text-dim: #5c6167;
     --accent: #dd8500;
     --signal: #18a05c;
+    --readout-bg: #f6f6f4;
     --mono: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  :root[data-theme="arizona"] {
+    --bg: #ffffff;
+    --line: #8b96a5;
+    --line-faint: #e2e8eb;
+    --text: #0c234b;
+    --text-dim: #46556a;
+    --accent: #ac0520;
+    --signal: #0c234b;
+    --readout-bg: #e2e8eb;
+    --mono: Aptos, Arial, sans-serif;
   }
   html, body {
     margin: 0;
@@ -83,7 +100,7 @@
 
     <!-- readout box with corner brackets -->
     <g id="readout-box">
-      <rect id="readout-rect" fill="#f6f6f4" stroke="var(--line)" stroke-width="1.5"/>
+      <rect id="readout-rect" fill="var(--readout-bg)" stroke="var(--line)" stroke-width="1.5"/>
       <path id="brackets" fill="none" stroke="var(--signal)" stroke-width="2"/>
       <text class="readout-unit" id="readout-title" text-anchor="middle">SIGNAL</text>
       <text class="readout" id="readout-value" text-anchor="middle">0.000</text>
