@@ -211,13 +211,14 @@ publications:
       - name: Jason Pacheco
         url: https://scholar.google.com/citations?user=71ZEsnEAAAAJ&hl=en
     paper:
-      summary: Sequential Bayesian optimal experimental design (BOED) chooses informative experiments adaptively based on the outcomes of prior experiments. 
-               The standard sequential BOED objective, expected information gain (EIG), scores an experimental design policy by the mean of its information gain (IG) distribution. 
-               However, the mean alone can obscure important characteristics of the distribution, such as its variance or lower-tail behavior. 
-               To address this limitation, we present DistBOED, a distributional learning method for sequential BOED that models the full distribution of IG induced by a design policy. 
-               DistBOED uses a quantile critic and a campaign-level actor update to learn policies for objectives beyond mean IG. 
-               We demonstrate DistBOED across three different scenarios with various risk-sensitive IG measures including: conditional value at risk, variance-penalized mean, and entropic risk measure.  
-               In each case we observe that accounting for higher-order aspects of the IG distribution yields more robust design policies than EIG alone.
+      summary: |
+        Sequential Bayesian optimal experimental design (BOED) chooses informative experiments adaptively based on the outcomes of prior experiments.
+        The standard sequential BOED objective, expected information gain (EIG), scores an experimental design policy by the mean of its information gain (IG) distribution.
+        However, the mean alone can obscure important characteristics of the distribution, such as its variance or lower-tail behavior.
+        To address this limitation, we present DistBOED, a distributional learning method for sequential BOED that models the full distribution of IG induced by a design policy.
+        DistBOED uses a quantile critic and a campaign-level actor update to learn policies for objectives beyond mean IG.
+        We demonstrate DistBOED across three different scenarios with various risk-sensitive IG measures including: conditional value at risk, variance-penalized mean, and entropic risk measure.
+        In each case we observe that accounting for higher-order aspects of the IG distribution yields more robust design policies than EIG alone.
     # url: https://academic.oup.com/gji/article/240/3/1802/7959837
     categories: ["oed", "seismic", "robust design"]
     tags: ["Bayesian OED", "Bayesian inference", "Robust Bayesian analysis", "Risk-aware BOED"]
