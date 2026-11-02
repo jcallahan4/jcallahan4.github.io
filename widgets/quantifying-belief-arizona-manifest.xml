@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="ContentApp">
+  <Id>b0fead5f-62c3-48ce-843a-8ea7dd9ceddf</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Jake Callahan</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Quantifying Belief (Arizona)"/>
+  <Description DefaultValue="A belief distribution over source location with automatic sampling and a sample histogram."/>
+  <IconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://www.jake-callahan.com"/>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/quantifying-belief-arizona.html"/>
+    <!-- Office requires initial dimensions between 32 and 1000 pixels. -->
+    <RequestedWidth>936</RequestedWidth>
+    <RequestedHeight>297</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>ReadDocument</Permissions>
+</OfficeApp>
