@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal Source Introduction</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --navy: #0c234b;
+    --red: #ac0520;
+    --muted: #46556a;
+    --line: #8b96a5;
+    --faint: #e2e8eb;
+    color: var(--navy);
+    background: #fff;
+    font-family: Aptos, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  main { position: relative; width: 100%; height: 100%; }
+  svg { display: block; width: 100%; height: 100%; user-select: none; }
+  text { fill: var(--navy); }
+  .label { font-size: 30px; }
+  .tick-label { font-size: 18px; fill: var(--muted); }
+  .reading { font-size: 56px; font-variant-numeric: tabular-nums; }
+  .reading-title { font-size: 24px; }
+  #waves { fill: none; stroke: var(--red); stroke-width: 2.5; }
+  .toolbar {
+    position: absolute; bottom: 0; left: 4%; right: 4%;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    min-height: 30px; background: #fff; font-size: clamp(12px, 1.8vw, 18px);
+  }
+  #status { margin: 0; }
+  button {
+    font: inherit; color: var(--navy); background: #fff;
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 10px; cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main aria-label="A source emits a signal that a sensor measures">
+  <svg id="scene" viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagram-title diagram-description">
+    <title id="diagram-title">From a source to a measurement</title>
+    <desc id="diagram-description">A fixed source emits waves along a number line. A fixed sensor receives them and displays signal strength. The reading stays the same because neither position changes.</desc>
+    <defs>
+      <clipPath id="wave-area"><rect x="0" y="0" width="1000" height="250"/></clipPath>
+    </defs>
+    <g clip-path="url(#wave-area)"><g id="waves"/></g>
+    <line x1="60" y1="250" x2="940" y2="250" stroke="var(--line)" stroke-width="2"/>
+    <g id="ticks"/>
+    <g id="source" transform="translate(280,250)">
+      <circle r="20" fill="none" stroke="var(--red)" stroke-width="2"/>
+      <circle r="10" fill="var(--red)"/>
+      <text class="label" y="90" text-anchor="middle">Source</text>
+    </g>
+    <g id="sensor" transform="translate(720,0)" data-received="false">
+      <circle id="arrival-ring" cx="0" cy="250" r="20" fill="none" stroke="var(--navy)" stroke-width="2" opacity="0"/>
+      <line x1="0" y1="158" x2="0" y2="250" stroke="var(--navy)" stroke-width="2.5"/>
+      <path d="M -12 142 L 12 142 L 0 158 Z" fill="var(--navy)"/>
+      <rect x="-120" y="15" width="240" height="115" rx="4" fill="var(--faint)" stroke="var(--line)"/>
+      <text class="reading-title" y="48" text-anchor="middle">Signal strength</text>
+      <text id="reading" class="reading" y="106" text-anchor="middle">—</text>
+      <text class="label" y="340" text-anchor="middle">Sensor</text>
+    </g>
+  </svg>
+  <div class="toolbar">
+    <p id="status" role="status" aria-live="polite">Waiting for the signal</p>
+    <button id="play" type="button" aria-label="Pause wave animation">Pause</button>
+  </div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var ns = "http://www.w3.org/2000/svg";
+  var sourcePosition = 2.5, sensorPosition = 7.5;
+  var ground = 250, waveSpeed = 0.22, maxRadius = 660, emissionPeriod = 1300;
+  var time = 0, nextEmission = 0, last = null, lastArrival = -Infinity;
+  var waves = [];
+  var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var playing = !reducedMotion;
+  var wavesGroup = document.getElementById("waves");
+  var sensor = document.getElementById("sensor");
+  var arrivalRing = document.getElementById("arrival-ring");
+  var playButton = document.getElementById("play");
+
+  // Map world coordinates 0..10 to SVG coordinates 60..940: x = 60 + 88u.
+  function position(u) { return 60 + 88 * u; }
+  var sourceX = position(sourcePosition), sensorX = position(sensorPosition);
+
+  // Same model as slide 6: signal = 1 / |sensor position - source position|².
+  // Both positions remain fixed, so each arrival produces the same reading.
+  var distance = Math.abs(sensorPosition - sourcePosition);
+  var strength = (1 / (distance * distance)).toFixed(3);
+
+  for (var u = 0; u <= 10; u++) {
+    var tick = document.createElementNS(ns, "path");
+    tick.setAttribute("d", "M " + position(u) + " " + ground + " v 7");
+    tick.setAttribute("stroke", "var(--line)");
+    document.getElementById("ticks").appendChild(tick);
+    var label = document.createElementNS(ns, "text");
+    label.setAttribute("x", position(u));
+    label.setAttribute("y", 290);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("class", "tick-label");
+    label.textContent = u;
+    document.getElementById("ticks").appendChild(label);
+  }
+
+  // Upper semicircle: (x - sourceX)² + (y - ground)² = radius².
+  function arcPath(radius) {
+    return "M " + (sourceX - radius) + " " + ground + " A " + radius + " " + radius + " 0 0 1 " + (sourceX + radius) + " " + ground;
+  }
+
+  function receiveSignal() {
+    document.getElementById("reading").textContent = strength;
+    document.getElementById("status").textContent = "Signal received";
+    sensor.dataset.received = "true";
+  }
+
+  function emit(born) {
+    var path = document.createElementNS(ns, "path");
+    wavesGroup.appendChild(path);
+    waves.push({ born: born, path: path, received: false });
+  }
+
+  function draw() {
+    while (time >= nextEmission) {
+      emit(nextEmission);
+      nextEmission += emissionPeriod;
+    }
+    waves = waves.filter(function (wave) {
+      // Illustrative propagation: radius = speed × elapsed time.
+      // Register an arrival when the radius reaches the source-sensor distance.
+      var radius = waveSpeed * (time - wave.born);
+      if (radius >= Math.abs(sensorX - sourceX) && !wave.received) {
+        wave.received = true;
+        lastArrival = time;
+        receiveSignal();
+      }
+      if (radius >= maxRadius) {
+        wave.path.remove();
+        return false;
+      }
+      wave.path.setAttribute("d", arcPath(Math.max(radius, 0.1)));
+      wave.path.setAttribute("opacity", (Math.min(radius / 30, 1) * (1 - radius / maxRadius) * 0.8).toFixed(3));
+      return true;
+    });
+    var arrivalProgress = Math.min((time - lastArrival) / 450, 1);
+    arrivalRing.setAttribute("r", 20 + 12 * arrivalProgress);
+    arrivalRing.setAttribute("opacity", ((1 - arrivalProgress) * 0.6).toFixed(3));
+  }
+
+  function updatePlayButton() {
+    playButton.textContent = playing ? "Pause" : "Play";
+    playButton.setAttribute("aria-label", playing ? "Pause wave animation" : "Play wave animation");
+  }
+  playButton.addEventListener("click", function () {
+    playing = !playing;
+    last = null;
+    updatePlayButton();
+  });
+  document.addEventListener("visibilitychange", function () { last = null; });
+
+  if (reducedMotion) {
+    // Show a static emission and reading when the system requests reduced motion.
+    time = 2400;
+    draw();
+    arrivalRing.setAttribute("opacity", "0");
+  } else {
+    draw();
+  }
+  updatePlayButton();
+  function frame(now) {
+    var dt = last === null || document.hidden ? 0 : Math.min(now - last, 100);
+    last = now;
+    if (playing) {
+      time += dt;
+      draw();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
