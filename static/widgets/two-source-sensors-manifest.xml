@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:type="ContentApp">
+  <Id>4e46d2b3-7e3d-4eb7-9c8b-2b7745b34291</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Jake Callahan</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Two Sources / Two Sensors (Arizona)"/>
+  <Description DefaultValue="Alternate two equally strong sources and compare readings at a middle sensor and an edge sensor."/>
+  <IconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://www.jake-callahan.com/widgets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://www.jake-callahan.com"/>
+  <Hosts>
+    <Host Name="Presentation"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/two-source-sensors.html"/>
+    <RequestedWidth>1100</RequestedWidth>
+    <RequestedHeight>390</RequestedHeight>
+  </DefaultSettings>
+  <Permissions>ReadDocument</Permissions>
+</OfficeApp>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Sources / Two Sensors</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --navy: #0c234b;
+    --red: #ac0520;
+    --muted: #46556a;
+    --line: #8b96a5;
+    --faint: #e2e8eb;
+    font-family: Aptos, Arial, sans-serif;
+    color: var(--navy);
+    background: #fff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  main { position: relative; width: 100%; height: 100%; }
+  svg { display: block; width: 100%; height: 100%; user-select: none; }
+  text { fill: var(--navy); }
+  .sensor-title { font-size: 25px; }
+  .reading { font-size: 52px; font-variant-numeric: tabular-nums; }
+  .history { font-size: 20px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .source-label { font-size: 30px; }
+  .comparison { font-size: 24px; }
+  .tick-label { font-size: 18px; fill: var(--muted); }
+  .source-dot { fill: var(--red); }
+  .source-ring { stroke: var(--red); fill: none; stroke-width: 2; }
+  .source[data-active="false"] .source-dot { fill: var(--line); }
+  .source[data-active="false"] .source-ring { visibility: hidden; }
+  .source[data-active="false"] .source-label { fill: var(--muted); }
+  .waves { fill: none; stroke: var(--red); stroke-width: 2.5; }
+  .toolbar {
+    position: absolute; bottom: 0; left: 3%; right: 3%;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    min-height: 30px; background: #fff; font-size: clamp(12px, 1.65vw, 18px);
+  }
+  #status { margin: 0; }
+  .controls { display: flex; gap: 5px; }
+  button {
+    font: inherit; color: var(--navy); background: #fff;
+    border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 9px; cursor: pointer;
+  }
+  button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .waves { display: none; } }
+</style>
+</head>
+<body>
+<main aria-label="Compare two sensor positions for two possible signal sources">
+  <svg id="scene" viewBox="0 0 1100 390" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagram-title diagram-description">
+    <title id="diagram-title">Two possible sources, two sensor positions</title>
+    <desc id="diagram-description">Sources A and B emit one at a time with equal strength. The middle sensor is equally far from both sources, so its reading stays the same. The edge sensor is closer to B, so its reading is stronger when B emits.</desc>
+    <defs>
+      <clipPath id="wave-area"><rect x="0" y="0" width="1100" height="245"/></clipPath>
+    </defs>
+    <g clip-path="url(#wave-area)">
+      <g id="waves-a" class="waves"/>
+      <g id="waves-b" class="waves"/>
+    </g>
+    <line x1="50" y1="245" x2="980" y2="245" stroke="var(--line)" stroke-width="2"/>
+    <g id="ticks"/>
+
+    <g id="source-a" class="source" data-active="true" transform="translate(236, 245)">
+      <circle class="source-ring" r="20"/>
+      <circle class="source-dot" r="10"/>
+      <text class="source-label" x="0" y="90" text-anchor="middle">Source A</text>
+    </g>
+    <g id="source-b" class="source" data-active="false" transform="translate(794, 245)">
+      <circle class="source-ring" r="20"/>
+      <circle class="source-dot" r="10"/>
+      <text class="source-label" x="0" y="90" text-anchor="middle">Source B</text>
+    </g>
+
+    <g id="middle-sensor" transform="translate(515, 0)">
+      <line x1="0" y1="154" x2="0" y2="245" stroke="var(--navy)" stroke-width="2.5"/>
+      <path d="M -12 138 L 12 138 L 0 154 Z" fill="var(--navy)"/>
+      <rect x="-114" y="10" width="228" height="116" rx="4" fill="var(--faint)" stroke="var(--line)"/>
+      <text class="sensor-title" y="39" text-anchor="middle">Middle sensor</text>
+      <text id="middle-reading" class="reading" y="88" text-anchor="middle">0.111</text>
+      <text class="history" y="115" text-anchor="middle">A: <tspan id="middle-a">0.111</tspan>   B: <tspan id="middle-b">—</tspan></text>
+      <text class="comparison" y="335" text-anchor="middle">Same reading</text>
+    </g>
+    <g id="edge-sensor" transform="translate(980, 0)">
+      <line x1="0" y1="154" x2="0" y2="245" stroke="var(--navy)" stroke-width="2.5"/>
+      <path d="M -12 138 L 12 138 L 0 154 Z" fill="var(--navy)"/>
+      <rect x="-114" y="10" width="228" height="116" rx="4" fill="var(--faint)" stroke="var(--line)"/>
+      <text class="sensor-title" y="39" text-anchor="middle">Edge sensor</text>
+      <text id="edge-reading" class="reading" y="88" text-anchor="middle">0.016</text>
+      <text class="history" y="115" text-anchor="middle">A: <tspan id="edge-a">0.016</tspan>   B: <tspan id="edge-b">—</tspan></text>
+      <text class="comparison" y="335" text-anchor="middle">Different readings</text>
+    </g>
+  </svg>
+  <div class="toolbar">
+    <p id="status" role="status" aria-live="polite">Source A emitting</p>
+    <div class="controls" role="group" aria-label="Emission controls">
+      <button id="play" type="button" aria-label="Pause automatic alternation">Pause</button>
+      <button id="choose-a" type="button" aria-pressed="true" aria-label="Show source A only">A</button>
+      <button id="choose-b" type="button" aria-pressed="false" aria-label="Show source B only">B</button>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  "use strict";
+  var ns = "http://www.w3.org/2000/svg";
+  var sources = { a: 2, b: 8 };
+  var sensors = { middle: 5, edge: 10 };
+  var active = "a";
+  var playing = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var elapsed = 0;
+  var last = null;
+  var period = 4000;
+  var wavePhase = 0;
+  var arcs = {};
+  var playButton = document.getElementById("play");
+
+  // Map the number line from world coordinates 0..10 to SVG coordinates 50..980.
+  function position(u) { return 50 + 93 * u; }
+
+  // Same model as slide 6: signal = 1 / |sensor position - source position|².
+  // Equal source strength and no noise isolate the effect of sensor placement.
+  function signal(source, sensor) {
+    var distance = Math.abs(source - sensor);
+    return 1 / (distance * distance);
+  }
+
+  for (var u = 0; u <= 10; u++) {
+    var x = position(u);
+    var tick = document.createElementNS(ns, "path");
+    tick.setAttribute("d", "M " + x + " 245 v 7");
+    tick.setAttribute("stroke", "var(--line)");
+    document.getElementById("ticks").appendChild(tick);
+    var label = document.createElementNS(ns, "text");
+    label.setAttribute("x", x);
+    label.setAttribute("y", 287);
+    label.setAttribute("text-anchor", "middle");
+    label.setAttribute("class", "tick-label");
+    label.textContent = u;
+    document.getElementById("ticks").appendChild(label);
+  }
+
+  Object.keys(sources).forEach(function (key) {
+    var group = document.getElementById("waves-" + key);
+    group.setAttribute("transform", "translate(" + position(sources[key]) + ",245)");
+    arcs[key] = [];
+    for (var i = 0; i < 4; i++) {
+      var arc = document.createElementNS(ns, "path");
+      group.appendChild(arc);
+      arcs[key].push(arc);
+    }
+  });
+
+  function drawWaves() {
+    Object.keys(sources).forEach(function (key) {
+      document.getElementById("waves-" + key).style.visibility = key === active ? "visible" : "hidden";
+      arcs[key].forEach(function (arc, i) {
+        var progress = (wavePhase + i / 4) % 1;
+        var radius = 22 + 215 * progress;
+        // Upper semicircles: x² + y² = radius², centered on the emitting source.
+        arc.setAttribute("d", "M " + (-radius) + " 0 A " + radius + " " + radius + " 0 0 1 " + radius + " 0");
+        arc.setAttribute("opacity", (Math.min(1, progress * 8) * (1 - progress) * 0.8).toFixed(3));
+      });
+    });
+  }
+
+  function showSource(key) {
+    active = key;
+    elapsed = 0;
+    wavePhase = 0;
+    Object.keys(sources).forEach(function (source) {
+      document.getElementById("source-" + source).dataset.active = String(source === active);
+      document.getElementById("choose-" + source).setAttribute("aria-pressed", String(source === active));
+    });
+    Object.keys(sensors).forEach(function (sensor) {
+      var reading = signal(sources[active], sensors[sensor]).toFixed(3);
+      document.getElementById(sensor + "-reading").textContent = reading;
+      document.getElementById(sensor + "-" + active).textContent = reading;
+    });
+    document.getElementById("status").textContent = "Source " + active.toUpperCase() + " emitting";
+    drawWaves();
+  }
+
+  function updatePlayButton() {
+    playButton.textContent = playing ? "Pause" : "Play";
+    playButton.setAttribute("aria-label", playing ? "Pause automatic alternation" : "Play automatic alternation");
+  }
+  playButton.addEventListener("click", function () {
+    playing = !playing;
+    last = null;
+    updatePlayButton();
+  });
+  Object.keys(sources).forEach(function (key) {
+    document.getElementById("choose-" + key).addEventListener("click", function () {
+      playing = false;
+      showSource(key);
+      updatePlayButton();
+    });
+  });
+  document.addEventListener("visibilitychange", function () { last = null; });
+
+  function frame(now) {
+    var dt = last === null || document.hidden ? 0 : Math.min(now - last, 100);
+    last = now;
+    if (playing) {
+      elapsed += dt;
+      if (elapsed >= period) showSource(active === "a" ? "b" : "a");
+      wavePhase = (wavePhase + dt / 2600) % 1;
+      drawWaves();
+    }
+    requestAnimationFrame(frame);
+  }
+  showSource(active);
+  updatePlayButton();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
