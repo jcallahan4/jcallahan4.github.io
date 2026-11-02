@@ -16,8 +16,9 @@
   </Hosts>
   <DefaultSettings>
     <SourceLocation DefaultValue="https://www.jake-callahan.com/widgets/two-source-sensors.html"/>
-    <RequestedWidth>1100</RequestedWidth>
-    <RequestedHeight>390</RequestedHeight>
+    <!-- Office requires initial dimensions between 32 and 1000 pixels. -->
+    <RequestedWidth>990</RequestedWidth>
+    <RequestedHeight>351</RequestedHeight>
   </DefaultSettings>
   <Permissions>ReadDocument</Permissions>
 </OfficeApp>
