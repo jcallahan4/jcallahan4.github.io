@@ -23,9 +23,11 @@
   svg { display: block; width: 100%; height: 100%; }
   text { fill: var(--navy); font-size: 22px; }
   .tick { fill: var(--muted); font-size: 19px; }
-  .bar { fill: var(--red); fill-opacity: .25; stroke: var(--red); stroke-opacity: .6; }
+  .bar { fill: var(--navy); fill-opacity: .2; stroke: var(--navy); stroke-opacity: .5; }
   .number { font-variant-numeric: tabular-nums; }
-  #readout { font-size: 35px; fill: var(--red); }
+  #readout, #prediction { font-size: 35px; }
+  #prediction { fill: var(--red); }
+  #error-value { font-size: 28px; }
   button {
     position: absolute; right: 1%; bottom: 2%;
     font: inherit; font-size: clamp(12px, 2.2vw, 20px);
@@ -39,41 +41,45 @@
 <main>
   <svg id="scene" viewBox="0 0 920 360" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title description">
     <title id="title">Repeated measurements at a fixed source and sensor</title>
-    <desc id="description">The source and sensor remain fixed. Each simulated reading is the predicted signal plus independent Gaussian noise. Readings accumulate in a histogram. A Gaussian model, scaled to expected counts per bin, appears as measurements accumulate.</desc>
+    <desc id="description">The source and sensor remain fixed. Red indicates the exact predicted signal. Navy indicates noisy measurements. The signed measurement error is the measured value minus the predicted signal. Each measurement leaves the sensor head and enters the histogram. A Gaussian model, scaled to expected counts per bin, appears as measurements accumulate.</desc>
     <text x="130" y="27" text-anchor="middle">Fixed source and sensor</text>
     <line x1="35" y1="210" x2="235" y2="210" stroke="var(--line)" stroke-width="1.5"/>
     <g id="source" transform="translate(55,210)">
       <circle r="8" fill="var(--red)"/>
       <path d="M -24 0 A 24 24 0 0 1 24 0 M -45 0 A 45 45 0 0 1 45 0" fill="none" stroke="var(--red)" stroke-width="2" opacity=".4"/>
-      <text y="38" text-anchor="middle">Source</text>
+      <text y="38" text-anchor="middle" style="fill:var(--red)">Source</text>
     </g>
     <g id="sensor" transform="translate(190,210)">
       <line y1="-55" y2="0" stroke="var(--navy)" stroke-width="2.5"/>
       <path d="M -10 -65 L 10 -65 L 0 -51 Z" fill="var(--navy)"/>
-      <circle id="sensor-pulse" r="15" fill="none" stroke="var(--red)" stroke-width="2" opacity="0"/>
+      <circle id="sensor-pulse" r="15" fill="none" stroke="var(--navy)" stroke-width="2" opacity="0"/>
       <text y="38" text-anchor="middle">Sensor</text>
     </g>
-    <rect x="112" y="62" width="146" height="80" rx="3" fill="var(--faint)"/>
-    <text x="185" y="87" text-anchor="middle" style="font-size:20px">Measurement</text>
-    <text id="readout" class="number" x="185" y="125" text-anchor="middle">—</text>
-    <text x="130" y="293" text-anchor="middle">Model prediction</text>
-    <text id="prediction" class="number" x="130" y="323" text-anchor="middle">0.040</text>
+    <rect x="3" y="62" width="114" height="80" rx="3" fill="var(--red)" fill-opacity=".08"/>
+    <text x="60" y="87" text-anchor="middle" style="font-size:20px;fill:var(--red)">Signal</text>
+    <text id="prediction" class="number" x="60" y="125" text-anchor="middle">0.040</text>
+    <rect x="126" y="62" width="139" height="80" rx="3" fill="var(--faint)"/>
+    <text x="195.5" y="87" text-anchor="middle" style="font-size:20px">Measurement</text>
+    <text id="readout" class="number" x="195.5" y="125" text-anchor="middle">—</text>
+    <text x="130" y="293" text-anchor="middle">Measurement error, ε</text>
+    <text id="error-value" class="number" x="130" y="325" text-anchor="middle">—</text>
     <line x1="275" y1="55" x2="275" y2="327" stroke="var(--faint)"/>
     <text id="count" class="number" x="338" y="29">Measurements: 0</text>
     <g id="legend" opacity="0">
-      <line x1="640" y1="22" x2="677" y2="22" stroke="var(--navy)" stroke-width="3"/>
+      <line x1="640" y1="22" x2="677" y2="22" stroke="var(--muted)" stroke-width="3"/>
       <text x="687" y="29">Gaussian model</text>
     </g>
     <g id="grid"/>
     <g id="bars"/>
-    <path id="curve" fill="none" stroke="var(--navy)" stroke-width="3" opacity="0"/>
-    <line id="model-marker" y1="62" y2="270" stroke="var(--muted)" stroke-dasharray="4 5" opacity=".5"/>
+    <path id="curve" fill="none" stroke="var(--muted)" stroke-width="3" opacity="0"/>
+    <line id="model-marker" y1="62" y2="270" stroke="var(--red)" stroke-width="2" stroke-dasharray="4 5" opacity=".65"/>
     <line x1="338" x2="898" y1="270" y2="270" stroke="var(--line)" stroke-width="1.5"/>
     <g id="ticks"/>
     <text x="299" y="170" text-anchor="middle" transform="rotate(-90 299 170)">Count</text>
     <text x="618" y="345" text-anchor="middle">Measured signal, y</text>
-    <g id="flights" fill="var(--red)"/>
-    <circle id="latest" cy="270" r="5" fill="var(--red)" visibility="hidden"/>
+    <circle id="signal-reference" cy="270" r="4" fill="var(--red)"/>
+    <g id="flights" fill="var(--navy)"/>
+    <circle id="latest" cy="270" r="5" fill="var(--navy)" visibility="hidden"/>
   </svg>
   <button id="play" type="button" aria-label="Pause measurements">Pause</button>
 </main>
@@ -130,6 +136,7 @@
     }
     var marker = document.getElementById("model-marker");
     marker.setAttribute("x1", x(mean)); marker.setAttribute("x2", x(mean));
+    document.getElementById("signal-reference").setAttribute("cx", x(mean));
   }
   function render() {
     // Expected counts per narrow bin are approximately N·Δy·p(y|θ,d).
@@ -178,6 +185,9 @@
       axes(); render();
     }
     readout.textContent = value.toFixed(3); readout.dataset.value = value;
+    // Signed measurement error: ε = y - g(θ,d), displayed at the measurement precision.
+    var error = Number((value - mean).toFixed(3));
+    document.getElementById("error-value").textContent = (error > 0 ? "+" : "") + error.toFixed(3);
     var dot = element("circle", { cx: sensorHeadX, cy: sensorHeadY, r: 5 }, document.getElementById("flights"));
     flights.push({ value: value, born: time, dot: dot });
     drawn++; lastMeasurement = time;
@@ -187,6 +197,7 @@
     total = 0; drawn = 0; cycle++;
     minimum = 0.01; maximum = 0.07;
     readout.textContent = "—"; delete readout.dataset.value;
+    document.getElementById("error-value").textContent = "—";
     latest.setAttribute("visibility", "hidden");
     nextDraw = time + 1800;
     axes(); render();
