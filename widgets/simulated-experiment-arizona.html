@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulated Experiment (Arizona)</title>
+<link rel="stylesheet" href="boed-arizona.css">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) Office.onReady(function () {});</script>
+</head><body data-widget="simulation">
+<main>
+  <div class="controls">
+    <span id="simulation-count">Hypothetical experiment 1</span>
+    <div class="fixed">Fixed sensor: d = 12 · Fixed noise: σ = 0.006</div>
+    <button id="play" type="button" aria-label="Pause simulation">Pause</button>
+  </div>
+  <svg id="scene" viewBox="0 0 1040 300" role="img" aria-labelledby="title description">
+    <title id="title">Simulate one possible experiment</title>
+    <desc id="description">Sample a source from the prior, generate a noisy measurement, update the prior, and compute the resulting information gain. The steps repeat automatically.</desc>
+  </svg>
+</main>
+<script src="boed-arizona-model.js"></script><script src="boed-arizona-ui.js"></script>
+</body></html>

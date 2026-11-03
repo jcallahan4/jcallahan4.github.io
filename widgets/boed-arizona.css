@@ -1,0 +1,25 @@
+:root {
+  --navy: #0c234b; --red: #ac0520; --muted: #46556a; --line: #8b96a5; --faint: #e2e8eb;
+  color: var(--navy); background: #fff; font-family: Aptos, Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body, main { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+main { display: flex; flex-direction: column; }
+.controls {
+  display: flex; align-items: center; gap: 2%; padding: 4px 2%; flex: 0 0 17%;
+  font-size: clamp(11px, 1.9vw, 20px);
+}
+label { white-space: nowrap; }
+output { font-variant-numeric: tabular-nums; }
+input[type="range"] { flex: 1; min-width: 65px; accent-color: var(--red); cursor: pointer; }
+.fixed { margin-left: auto; font-size: .85em; line-height: 1.4; white-space: nowrap; }
+button { color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 3px;
+  padding: 4px 9px; font: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+svg { display: block; width: 100%; flex: 1; min-height: 0; }
+text { fill: var(--navy); font-size: 20px; }
+.tick, .small { fill: var(--muted); font-size: 17px; }
+.value { fill: var(--red); font-size: 32px; font-variant-numeric: tabular-nums; }
+.prior { fill: none; stroke: var(--navy); stroke-width: 2.5; stroke-dasharray: 7 5; }
+.posterior { fill: none; stroke: var(--red); stroke-width: 3; }
+.axis { fill: none; stroke: var(--line); stroke-width: 1.3; }

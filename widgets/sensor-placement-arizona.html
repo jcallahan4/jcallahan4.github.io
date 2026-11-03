@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensor Placement (Arizona)</title>
+<link rel="stylesheet" href="boed-arizona.css">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) Office.onReady(function () {});</script>
+</head><body data-widget="design">
+<main>
+  <div class="controls">
+    <label for="design">Sensor location: d = <output id="design-value">12.00</output></label>
+    <input id="design" type="range" min="0" max="36" step="1" value="4" aria-label="Sensor location in the allowed interval from 11 to 20">
+    <div class="fixed">Allowed locations: 11 ≤ d ≤ 20<br>Fixed noise: σ = 0.006</div>
+  </div>
+  <svg id="scene" viewBox="0 0 1040 300" role="img" aria-labelledby="title description">
+    <title id="title">Choose a sensor location using expected information gain</title>
+    <desc id="description">The sensor moves within the allowed interval from 11 to 20. A curve gives the numerically computed expected information gain at each candidate position and marks the best allowed location.</desc>
+  </svg>
+</main>
+<script src="boed-arizona-model.js"></script><script src="boed-arizona-design-scores.js"></script><script src="boed-arizona-ui.js"></script>
+</body></html>
