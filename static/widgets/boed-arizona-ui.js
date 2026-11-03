@@ -169,49 +169,70 @@
   }
 
   function expectation() {
-    var drawing=group(),rng=model.random(498231),values=[],means=[],sum=0,current=null,next=1600,finishedAt=null;
-    var maximumCount=400,cycle=1;
-    function add(){
-      current=model.experiment(rng,model.design,model.sigma);
-      values.push(current.ig);sum+=current.ig;
-      // Monte Carlo EIG estimate: mean_N = (1/N) Σᵢ IG(yᵢ,d), with independent prior-predictive draws.
-      means.push(sum/values.length);
+    var drawing=group(),rng=model.random(498231),experiments=[],selected=-1,sum=0;
+    var simulateButton=document.getElementById("simulate"),resetButton=document.getElementById("reset");
+    function select(index){
+      selected=index;render();
+      var bar=drawing.querySelector('[data-index="'+index+'"]');
+      if(bar&&bar.focus)bar.focus();
     }
     function render(){
+      var current=experiments[selected]||null,values=experiments.map(function(result){return result.ig;});
+      // Monte Carlo EIG estimate: mean_N = (1/N) Σᵢ KL(p(θ|yᵢ,d) || p(θ)), with independent prior-predictive draws.
+      var mean=experiments.length?sum/experiments.length:null;
       drawing.replaceChildren();
       legend(drawing,75,18,true);
+      text(205,47,current?"Observation "+(selected+1):"Prior before simulation",drawing,{"text-anchor":"middle",class:"small",style:"font-size:15px"});
       density(drawing,{x:75,y:63,w:260,h:151},current,true);
       text(205,260,"Source location, θ",drawing,{"text-anchor":"middle",style:"font-size:18px"});
-      text(205,290,"Current y′ = "+current.observation.toFixed(3),drawing,{"text-anchor":"middle",class:"small"});
-      node("circle",{cx:480,cy:18,r:3,fill:"var(--navy)"},drawing);
-      text(492,24,"Individual gain",drawing,{style:"font-size:18px"});
+      text(205,290,current?"y′ = "+current.observation.toFixed(3)+" · KL = "+current.ig.toFixed(2)+" nats":"y′ = — · KL = —",drawing,{"text-anchor":"middle",class:"small",style:"font-size:16px"});
+      node("rect",{x:475,y:11,width:17,height:13,fill:"var(--navy)",opacity:0.65},drawing);
+      text(502,24,"KL per observation",drawing,{style:"font-size:18px"});
       node("line",{x1:720,x2:750,y1:18,y2:18,stroke:"var(--red)","stroke-width":3},drawing);
-      text(760,24,"Running mean",drawing,{style:"font-size:18px"});
-      var b={x:477,y:63,w:517,h:151},ymax=niceMax(values,2);
-      var xy=axes(drawing,b,0,maximumCount,ymax,[0,100,200,300,400],false);
-      values.forEach(function(v,i){node("circle",{cx:xy.x(i+1),cy:xy.y(v),r:2,fill:"var(--navy)",opacity:0.4},drawing);});
-      node("path",{d:path(means.map(function(_,i){return i+1;}),means,xy),fill:"none",stroke:"var(--red)","stroke-width":3},drawing);
-      text(736,260,"Simulated experiments",drawing,{"text-anchor":"middle",style:"font-size:18px"});
-      text(409,139,"Information gain (nats)",drawing,{"text-anchor":"middle",transform:"rotate(-90 409 139)",style:"font-size:17px"});
-      document.getElementById("sample-count").textContent="Simulated experiments: "+values.length;
-      document.getElementById("estimate").textContent="Mean information gain: "+means[means.length-1].toFixed(2)+" nats";
-      svg.dataset.samples=values.length;svg.dataset.mean=means[means.length-1];svg.dataset.cycle=cycle;
-      // Standard error of the mean is s/√N; retain it for numerical verification, without adding a control.
-      var variance=values.length>1?values.reduce(function(s,v){return s+Math.pow(v-sum/values.length,2);},0)/(values.length-1):0;
-      svg.dataset.standardError=Math.sqrt(variance/values.length);
-      diagnostics(current);
+      text(760,24,"Mean (estimated EIG)",drawing,{style:"font-size:18px"});
+      var b={x:477,y:63,w:517,h:151},ymax=niceMax(values,1);
+      var slots=Math.max(10,Math.ceil(values.length/10)*10),ticks=[],tickStep=Math.max(1,Math.ceil(slots/10));
+      for(var tick=1;tick<=slots;tick+=tickStep)ticks.push(tick);
+      var xy=axes(drawing,b,0.5,slots+0.5,ymax,ticks,false);
+      var annotations=[];
+      values.forEach(function(value,i){
+        var barWidth=b.w/slots*0.72;
+        var bar=node("rect",{x:xy.x(i+1)-barWidth/2,y:xy.y(value),width:barWidth,height:xy.y(0)-xy.y(value),
+          fill:"var(--navy)","fill-opacity":i===selected?0.8:0.45,stroke:i===selected?"var(--red)":"none","stroke-width":2,
+          class:"kl-bar",role:"button",tabindex:0,"aria-pressed":i===selected,
+          "aria-label":"Show posterior for observation "+(i+1)+", KL "+value.toFixed(2)+" nats",
+          "data-index":i,"data-kl":value},drawing);
+        node("title",{},bar,"Observation "+(i+1)+": KL = "+value.toFixed(3)+" nats");
+        bar.addEventListener("click",function(){select(i);});
+        bar.addEventListener("keydown",function(event){if(event.key==="Enter"||event.key===" "){event.preventDefault();select(i);}});
+        if(slots<=20)annotations.push({x:xy.x(i+1),y:xy.y(value)-7,value:value.toFixed(2)});
+      });
+      if(mean!==null)node("line",{id:"mean-line",x1:b.x,x2:b.x+b.w,y1:xy.y(mean),y2:xy.y(mean),stroke:"var(--red)","stroke-width":2.5,"pointer-events":"none"},drawing);
+      else text(736,141,"Simulate an observation to begin",drawing,{"text-anchor":"middle",class:"small"});
+      annotations.forEach(function(label){text(label.x,label.y,label.value,drawing,{"text-anchor":"middle",class:"small",
+        style:"font-size:"+(slots<=10?15:12)+"px;paint-order:stroke;stroke:white;stroke-width:4px;stroke-linejoin:round"});});
+      text(736,260,"Simulated observation",drawing,{"text-anchor":"middle",style:"font-size:18px"});
+      text(409,139,"KL divergence (nats)",drawing,{"text-anchor":"middle",transform:"rotate(-90 409 139)",style:"font-size:17px"});
+      text(736,290,"Each observation starts from the same prior.",drawing,{"text-anchor":"middle",class:"small",style:"font-size:16px"});
+      document.getElementById("sample-count").textContent="Observations: "+values.length;
+      document.getElementById("estimate").textContent="Estimated EIG: "+(mean===null?"—":mean.toFixed(2)+" nats");
+      resetButton.disabled=!values.length;
+      svg.dataset.samples=values.length;svg.dataset.mean=mean===null?"":mean;svg.dataset.selected=selected;
+      svg.dataset.design=model.design;svg.dataset.sigma=model.sigma;svg.dataset.priorArea=model.integrate(model.prior);
+      if(current){diagnostics(current);svg.dataset.source=current.source;}
+      else ["observation","ig","posteriorArea","source"].forEach(function(key){delete svg.dataset[key];});
     }
-    if(reduced){for(var i=0;i<maximumCount;i++)add();}else add();
-    render();
-    clock(function(time){
-      if(values.length>=maximumCount){
-        if(finishedAt===null)finishedAt=time;
-        if(time-finishedAt<12000)return;
-        values=[];means=[];sum=0;cycle++;finishedAt=null;next=time;
-      }
-      if(time<next)return;
-      add();render();next=time+(values.length<6?1600:values.length<30?160:40);
+    simulateButton.addEventListener("click",function(){
+      var result=model.experiment(rng,model.design,model.sigma);
+      experiments.push(result);sum+=result.ig;selected=experiments.length-1;render();
+      document.getElementById("simulation-status").textContent="Observation "+experiments.length+": "+result.observation.toFixed(3)+
+        ". KL divergence "+result.ig.toFixed(2)+" nats. Estimated expected information gain "+(sum/experiments.length).toFixed(2)+" nats.";
     });
+    resetButton.addEventListener("click",function(){
+      rng=model.random(498231);experiments=[];selected=-1;sum=0;render();
+      document.getElementById("simulation-status").textContent="Simulations cleared.";
+    });
+    render();
   }
 
   function design(){
