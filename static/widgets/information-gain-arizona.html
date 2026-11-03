@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Information Gain (Arizona)</title>
+<link rel="stylesheet" href="boed-arizona.css">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) Office.onReady(function () {});</script>
+</head><body data-widget="information">
+<main>
+  <div class="controls">
+    <label for="observation">Observed measurement: y = <output id="observation-value">0.050</output></label>
+    <input id="observation" type="range" min="-0.010" max="0.120" step="0.001" value="0.050" aria-label="Observed measurement">
+    <div class="fixed">Fixed sensor: d = 12<br>Fixed noise: σ = 0.006</div>
+  </div>
+  <svg id="scene" viewBox="0 0 1040 300" role="img" aria-labelledby="title description">
+    <title id="title">Information gain from one observation</title>
+    <desc id="description">The posterior changes with the observed measurement. Information gain is the Kullback-Leibler divergence from the posterior to the fixed prior, measured in nats.</desc>
+  </svg>
+</main>
+<script src="boed-arizona-model.js"></script><script src="boed-arizona-ui.js"></script>
+</body></html>
