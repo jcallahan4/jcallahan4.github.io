@@ -2,20 +2,32 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expected Information Gain (Arizona)</title>
 <link rel="stylesheet" href="boed-arizona.css">
+<style>
+  .controls { gap: 1.5%; }
+  #simulate { background: var(--navy); color: white; white-space: nowrap; }
+  #estimate { color: var(--red); white-space: nowrap; }
+  #sample-count { white-space: nowrap; }
+  button:disabled { opacity: .45; cursor: default; }
+  .kl-bar { cursor: pointer; }
+  .kl-bar:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script>if (window.Office && Office.onReady) Office.onReady(function () {});</script>
 </head><body data-widget="expectation">
 <main>
   <div class="controls">
-    <span id="sample-count">Simulated experiments: 0</span>
-    <span id="estimate">Mean information gain: —</span>
+    <button id="simulate" type="button">Simulate an observation</button>
+    <span id="sample-count">Observations: 0</span>
+    <span id="estimate">Estimated EIG: —</span>
     <div class="fixed">d = 12<br>σ = 0.006</div>
-    <button id="play" type="button" aria-label="Pause averaging">Pause</button>
+    <button id="reset" type="button" disabled>Reset</button>
   </div>
+  <span id="simulation-status" class="sr-only" role="status" aria-live="polite"></span>
   <svg id="scene" viewBox="0 0 1040 300" role="img" aria-labelledby="title description">
     <title id="title">Average information gain over possible observations</title>
-    <desc id="description">Independent hypothetical experiments produce different information gains. Individual gains and their running mean accumulate automatically. Every experiment starts from the same prior.</desc>
+    <desc id="description">Press Simulate an observation to generate one independent hypothetical measurement, its posterior, and its KL divergence. Each bar records one KL value. The red line marks their mean, an estimate of expected information gain. Select a bar to revisit its posterior. Every experiment starts from the same prior.</desc>
   </svg>
 </main>
-<script src="boed-arizona-model.js"></script><script src="boed-arizona-ui.js"></script>
+<script src="boed-arizona-model.js"></script><script src="boed-arizona-ui.js?v=manual-eig-2"></script>
 </body></html>
