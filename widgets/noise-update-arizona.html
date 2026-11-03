@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noise and Belief Updates (Arizona)</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>if (window.Office && Office.onReady) { Office.onReady(function () {}); }</script>
+<style>
+  :root {
+    --navy: #0c234b; --red: #ac0520; --muted: #46556a;
+    --line: #8b96a5; --faint: #e2e8eb;
+    color: var(--navy); background: #fff;
+    font-family: Aptos, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body, main { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+  main { display: flex; flex-direction: column; }
+  .controls {
+    display: flex; align-items: center; gap: 2%; padding: 5px 2% 3px;
+    flex: 0 0 17%; font-size: clamp(11px, 1.9vw, 20px);
+  }
+  label { flex: 0 0 auto; white-space: nowrap; }
+  output { display: inline-block; min-width: 3.9em; font-variant-numeric: tabular-nums; }
+  input { flex: 1; min-width: 60px; accent-color: var(--red); cursor: pointer; }
+  input:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; }
+  .fixed { margin-left: 1%; font-size: .85em; line-height: 1.4; white-space: nowrap; }
+  svg { display: block; width: 100%; flex: 1; min-height: 0; }
+  text { fill: var(--navy); font-size: 20px; }
+  .tick { fill: var(--muted); font-size: 17px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="controls">
+    <label for="noise">Noise standard deviation: σ = <output id="sigma" for="noise">0.0060</output></label>
+    <input id="noise" type="range" min="0" max="1000" step="1" value="177"
+           aria-label="Measurement noise standard deviation" aria-describedby="fixed-values">
+    <div class="fixed" id="fixed-values">Fixed observation: y = 0.050<br>Fixed sensor: d = 12</div>
+  </div>
+  <svg id="scene" viewBox="0 0 1040 300" preserveAspectRatio="xMidYMid meet"
+       role="img" aria-labelledby="title description">
+    <title id="title">Measurement noise controls the Bayesian update</title>
+    <desc id="description">Change the noise standard deviation to compare the likelihood and posterior. The prior, observed measurement, and sensor location remain fixed.</desc>
+    <text x="92" y="25">Likelihood</text>
+    <line x1="638" x2="672" y1="18" y2="18" stroke="var(--navy)" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <text x="682" y="25">Prior</text>
+    <line x1="804" x2="838" y1="18" y2="18" stroke="var(--red)" stroke-width="3"/>
+    <text x="848" y="25">Posterior</text>
+    <g id="axes"/>
+    <g id="density-axis"/>
+    <path id="likelihood-fill" fill="var(--navy)" fill-opacity=".07"/>
+    <path id="likelihood" fill="none" stroke="var(--navy)" stroke-width="3"/>
+    <path id="posterior-fill" fill="var(--red)" fill-opacity=".10"/>
+    <path id="prior" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <path id="posterior" fill="none" stroke="var(--red)" stroke-width="3"/>
+    <text x="280" y="284" text-anchor="middle">Source location, θ</text>
+    <text x="818" y="284" text-anchor="middle">Source location, θ</text>
+    <text x="24" y="142" text-anchor="middle" transform="rotate(-90 24 142)">Relative likelihood</text>
+    <text x="556" y="142" text-anchor="middle" transform="rotate(-90 556 142)">Probability density</text>
+  </svg>
+</main>
+<script>
+(function () {
+  "use strict";
+  var ns = "http://www.w3.org/2000/svg";
+  var scene = document.getElementById("scene");
+  var slider = document.getElementById("noise");
+  var sensor = 12, observation = 0.050;
+  var count = 2000, step = 10 / count, theta = [], prior = [];
+  var left = 92, right = 638, width = 360, top = 53, ground = 226;
+
+  function element(tag, attributes, parent, text) {
+    var node = document.createElementNS(ns, tag);
+    Object.keys(attributes).forEach(function (key) { node.setAttribute(key, attributes[key]); });
+    if (text !== undefined) node.textContent = text;
+    parent.appendChild(node);
+    return node;
+  }
+  // Same prior as Quantifying Belief: q(θ) = 0.6 N(3.6,1.1²) + 0.4 N(7.1,0.75²).
+  // Normalize over θ ∈ [0,10] to obtain p(θ).
+  function normal(t, mean, sd) {
+    var z = (t - mean) / sd;
+    return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+  }
+  // Composite trapezoidal rule: ∫f(θ)dθ ≈ Δθ[(f₀+fₙ)/2 + Σᵢ₌₁ⁿ⁻¹fᵢ].
+  function integrate(values) {
+    var sum = (values[0] + values[count]) / 2;
+    for (var i = 1; i < count; i++) sum += values[i];
+    return sum * step;
+  }
+  for (var i = 0; i <= count; i++) {
+    theta.push(i * step);
+    prior.push(0.6 * normal(i * step, 3.6, 1.1) + 0.4 * normal(i * step, 7.1, 0.75));
+  }
+  var priorArea = integrate(prior);
+  prior = prior.map(function (p) { return p / priorArea; });
+
+  // Forward model g(θ,d) = 1/(d-θ)². Keep the sensor outside [0,10].
+  function signal(t) { return 1 / ((sensor - t) * (sensor - t)); }
+  // Display coordinates: x = x₀ + wθ/10; y = bottom - h f(θ)/f_max.
+  function x(t, start) { return start + width * t / 10; }
+  function y(value, maximum) { return ground - (ground - top) * value / maximum; }
+  function path(values, start, maximum, filled) {
+    var d = "";
+    for (var j = 0; j <= count; j++) {
+      d += (j ? " L " : "M ") + x(theta[j], start).toFixed(2) + " " + y(values[j], maximum).toFixed(2);
+    }
+    return filled ? d + " L " + (start + width) + " " + ground + " L " + start + " " + ground + " Z" : d;
+  }
+  var axes = document.getElementById("axes");
+  [left, right].forEach(function (start) {
+    element("path", {d: "M " + start + " " + top + " V " + ground + " H " + (start + width),
+      fill: "none", stroke: "var(--line)", "stroke-width": 1.3}, axes);
+    for (var t = 0; t <= 10; t += 2) {
+      element("line", {x1: x(t, start), x2: x(t, start), y1: ground, y2: ground + 6,
+        stroke: "var(--line)"}, axes);
+      element("text", {x: x(t, start), y: ground + 27, "text-anchor": "middle", class: "tick"}, axes, t);
+    }
+  });
+  [0, 0.5, 1].forEach(function (value) {
+    element("text", {x: left - 12, y: y(value, 1.05) + 5, "text-anchor": "end", class: "tick"}, axes, value);
+  });
+
+  function render() {
+    // Logarithmic slider: σ = 0.003 × 50^(v/1000), rounded to 10⁻⁴.
+    var sigma = Math.round(0.003 * Math.pow(50, Number(slider.value) / 1000) * 10000) / 10000;
+    // Gaussian observation model Y = g(θ,d) + ε, ε ~ N(0,σ²).
+    // Relative likelihood L(θ)/max L = exp[-(y_obs-g(θ,d))²/(2σ²)]; its maximum is attained in [0,10].
+    var likelihood = theta.map(function (t) {
+      var residual = (observation - signal(t)) / sigma;
+      return Math.exp(-0.5 * residual * residual);
+    });
+    // Bayes' rule: p(θ|y,d) = p(θ)L(θ) / ∫p(u)L(u)du. A constant scaling of L cancels.
+    var posterior = prior.map(function (p, j) { return p * likelihood[j]; });
+    var mass = integrate(posterior);
+    posterior = posterior.map(function (p) { return p / mass; });
+    // Both belief curves share one density scale. Round its upper limit to a readable tick.
+    var peak = Math.max.apply(null, posterior.concat(prior));
+    var unit = Math.pow(10, Math.floor(Math.log10(peak)));
+    var densityMax = Math.ceil(peak * 1.12 / unit) * unit;
+    var densityAxis = document.getElementById("density-axis");
+    densityAxis.replaceChildren();
+    [0, densityMax / 2, densityMax].forEach(function (value) {
+      element("line", {x1: right, x2: right + width, y1: y(value, densityMax), y2: y(value, densityMax),
+        stroke: "var(--faint)"}, densityAxis);
+      element("text", {x: right - 12, y: y(value, densityMax) + 5, "text-anchor": "end", class: "tick"},
+        densityAxis, Number(value.toPrecision(2)));
+    });
+    document.getElementById("likelihood").setAttribute("d", path(likelihood, left, 1.05, false));
+    document.getElementById("likelihood-fill").setAttribute("d", path(likelihood, left, 1.05, true));
+    document.getElementById("prior").setAttribute("d", path(prior, right, densityMax, false));
+    document.getElementById("posterior").setAttribute("d", path(posterior, right, densityMax, false));
+    document.getElementById("posterior-fill").setAttribute("d", path(posterior, right, densityMax, true));
+    document.getElementById("sigma").value = sigma.toFixed(4);
+    slider.setAttribute("aria-valuetext", sigma.toFixed(4));
+    scene.dataset.sigma = sigma;
+    scene.dataset.observation = observation;
+    scene.dataset.sensor = sensor;
+    scene.dataset.priorArea = integrate(prior);
+    scene.dataset.posteriorArea = integrate(posterior);
+    // Total variation distance TV(p,q) = ½∫|p-q|dθ, used only for numerical verification.
+    scene.dataset.totalVariation = integrate(posterior.map(function (p, j) { return Math.abs(p - prior[j]) / 2; }));
+    scene.dataset.densityMax = densityMax;
+  }
+  slider.addEventListener("input", render);
+  render();
+})();
+</script>
+</body>
+</html>
