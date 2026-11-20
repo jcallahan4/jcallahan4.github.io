@@ -2,19 +2,27 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulated Experiment (Arizona)</title>
 <link rel="stylesheet" href="boed-arizona.css">
+<style>
+  .controls { flex: 0 0 34px; font-size: clamp(12px, 1.8vw, 19px); padding: 0 1.5%; gap: 12px; }
+  #simulation-count { margin-right: auto; font-variant-numeric: tabular-nums; }
+  #reset { color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script>if (window.Office && Office.onReady) Office.onReady(function () {});</script>
 </head><body data-widget="simulation">
 <main>
   <div class="controls">
-    <span id="simulation-count">Hypothetical experiment 1</span>
-    <div class="fixed">Fixed sensor: d = 12 · Fixed noise: σ = 0.006</div>
+    <span id="simulation-count">Simulation 1</span>
     <button id="play" type="button" aria-label="Pause simulation">Pause</button>
+    <button id="next" type="button" aria-label="Complete one simulation">Next</button>
+    <button id="reset" type="button">Reset</button>
   </div>
-  <svg id="scene" viewBox="0 0 1040 300" role="img" aria-labelledby="title description">
-    <title id="title">Simulate one possible experiment</title>
-    <desc id="description">Sample a source from the prior, generate a noisy measurement, update the prior, and compute the resulting information gain. The steps repeat automatically.</desc>
+  <span id="simulation-status" class="sr-only" role="status" aria-live="polite"></span>
+  <svg id="scene" viewBox="0 0 1040 388" role="img" aria-labelledby="title description">
+    <title id="title">Simulate experiments and average their information gains</title>
+    <desc id="description">Four steps sample a source, simulate data, update the same prior, and compute KL divergence. Each completed simulation adds a bar below. The red line shows the current average, an estimate of expected information gain. The sensor and noise model stay fixed. The sequence runs automatically; Pause, Next, and Reset are optional.</desc>
   </svg>
 </main>
-<script src="boed-arizona-model.js"></script><script src="boed-arizona-ui.js"></script>
+<script src="boed-arizona-model.js"></script><script src="boed-simulation-average.js"></script>
 </body></html>
